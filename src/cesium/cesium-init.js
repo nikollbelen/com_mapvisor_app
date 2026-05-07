@@ -437,8 +437,8 @@ async function loadLotesData() {
       position: referencePoint,
       billboard: {
         image: "images/mikonos_marker.png",
-        width: 150,
-        height: 200,
+        width: 300,
+        height: 400,
         verticalOrigin: window.Cesium.VerticalOrigin.BOTTOM,
         horizontalOrigin: window.Cesium.HorizontalOrigin.CENTER,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
@@ -488,15 +488,28 @@ async function loadLotesData() {
       // Control visibility of all markers except environment
       const allEntities = viewer.entities.values;
       allEntities.forEach((entity) => {
-        // Exclude environment markers and Mykonos marker
-        if (
-          entity.id &&
+        if (!entity.id || !entity.billboard) return;
+
+        // Logic for photo markers and common areas (disappear when Mykonos appears)
+        if (entity.id.startsWith("marcador_foto_") || entity.id.startsWith("area_comun_")) {
+          if (distance > MARKER_SHOW_DISTANCE) {
+            entity.billboard.show = false;
+          } else {
+            // Common areas are only visible when close (< 550m)
+            if (entity.id.startsWith("area_comun_")) {
+              entity.billboard.show = distance < MAX_DISTANCE;
+            } else {
+              // Photo markers are visible if Mykonos is not
+              entity.billboard.show = true;
+            }
+          }
+        } 
+        // Other markers (except environment and Mykonos)
+        else if (
           !entity.id.startsWith("marcador_entorno_") &&
-          !entity.id.startsWith("marcador_foto_") &&
-          entity.id !== "mykonos_marker" &&
-          entity.billboard
+          entity.id !== "mykonos_marker"
         ) {
-          // Show markers when you are less than 550m away (same distance as labels)
+          // Show markers when you are less than 550m away
           entity.billboard.show = distance < MAX_DISTANCE;
 
           // Also control labels if they exist
@@ -1364,7 +1377,7 @@ async function handleFotos() {
             horizontalOrigin: window.Cesium.HorizontalOrigin.CENTER,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             color: window.Cesium.Color.WHITE,
-            scale: 1.0,
+            scale: 2.0,
             show: true,
             scaleByDistance: new window.Cesium.NearFarScalar(
               100.0,
@@ -1449,26 +1462,25 @@ async function handleAreasComunes() {
   let areasData = null;
 
   try {
-    // Cargar datos desde la API de Apico
-    const response = await fetch("https://api.apico.dev/v1/gE2H1N/1vL47XFQKS6ajoKccemle7MYYDStFVawgnopVpfzz-UA/values/areas");
-    const apiData = await response.json();
+    // Cargar datos desde el archivo GeoJSON local
+    const response = await fetch("./data/areas.geojson");
+    const geojsonData = await response.json();
     
-    // Usar directamente los datos de la API sin transformar a GeoJSON
-    areasData = apiData;
+    areasData = geojsonData;
 
-    if (areasData && areasData.values) {
+    if (areasData && areasData.features) {
       const positions = [];
 
-      // Crear marcadores para cada área usando directamente los datos de la API
-      areasData.values.forEach((row) => {
-        const fid = parseInt(row[0]);
-        const name = row[1];
-        const marker = row[2];
-        const image = row[3];
-        const longitude = parseFloat(row[4]);
-        const latitude = parseFloat(row[5]);
+      // Crear marcadores para cada área usando los datos del GeoJSON
+      areasData.features.forEach((feature) => {
+        const fid = feature.properties.fid;
+        const name = feature.properties.name;
+        const marker = feature.properties.marker;
+        const image = feature.properties.image;
+        const longitude = feature.geometry.coordinates[0];
+        const latitude = feature.geometry.coordinates[1];
 
-        // Crear marcador con imagen areas_comunes.svg
+        // Crear marcador con imagen personalizada
         viewer.entities.add({
           id: `area_comun_${fid}`,
           position: window.Cesium.Cartesian3.fromDegrees(
@@ -1483,7 +1495,7 @@ async function handleAreasComunes() {
             horizontalOrigin: window.Cesium.HorizontalOrigin.CENTER,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             color: window.Cesium.Color.WHITE,
-            scale: 1.0,
+            scale: 2.0,
             show: true,
             scaleByDistance: new window.Cesium.NearFarScalar(
               100.0,
@@ -1526,13 +1538,13 @@ async function handleAreasComunes() {
         flyToView(positions);
       }
 
-      // Configure hover events for markers (ya incluye áreas comunes)
+      // Configure hover events for markers
       hoverMarcadores();
       // Configure click for area markers
       clickMarcadoresAreasComunes();
     }
   } catch (error) {
-    console.error("Error al cargar las áreas comunes:", error);
+    console.error("Error al cargar las áreas comunes desde GeoJSON:", error);
   }
 
   if (areasData) {
@@ -2025,7 +2037,7 @@ async function loadEntornoMarkers(filterType = null) {
             horizontalOrigin: window.Cesium.HorizontalOrigin.CENTER,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             color: window.Cesium.Color.WHITE,
-            scale: 1.0,
+            scale: 2.0,
             show: true,
             alignedAxis: window.Cesium.Cartesian3.ZERO,
             pixelOffset: window.Cesium.Cartesian2.ZERO,
