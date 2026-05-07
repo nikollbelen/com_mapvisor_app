@@ -240,8 +240,17 @@ try {
 
 async function loadLotesData() {
   try {
-    const response = await fetch("./data/lotes.geojson");
-    lotesData = await response.json();
+    const [resp1, resp2] = await Promise.all([
+      fetch("./data/lotes.geojson"),
+      fetch("./data/lotesv2.geojson")
+    ]);
+    const data1 = await resp1.json();
+    const data2 = await resp2.json();
+    
+    lotesData = {
+      ...data1,
+      features: [...(data1.features || []), ...(data2.features || [])]
+    };
 
     // 1) Obtener propiedades desde API por POST y mapear por fid (manteniendo geometrías locales)
     fidToApiProps.clear(); // Limpiar el Map antes de cargar nuevos datos
@@ -397,18 +406,21 @@ async function loadLotesData() {
           new window.Cesium.Cartographic(
             labelCartographic.longitude,
             labelCartographic.latitude,
-            labelCartographic.height + 0.4 // 0.4m por encima del polígono (que está a 0.1m)
+            labelCartographic.height + 5.0 // 5m por encima del polígono
           )
         );
-
+ 
         // Add a label at the center of the polygon
         const labelEntity = viewer.entities.add({
           position: elevatedLabelPosition,
+          properties: entity.properties,
           label: {
-            text:
-              entity.properties.manzana && entity.properties.lote
-                ? `${entity.properties.manzana}${entity.properties.lote}`
-                : "",
+            text: (() => {
+              const mz = entity.properties.manzana ? entity.properties.manzana.getValue() : "";
+              const lt = entity.properties.lote ? entity.properties.lote.getValue() : "";
+              if (mz === "Parcela") return `Parcela ${lt}`;
+              return (mz && lt) ? `${mz}${lt}` : "";
+            })(),
             font: getLabelFont(),
             fillColor: window.Cesium.Color.WHITE,
             outlineColor: window.Cesium.Color.GRAY,
@@ -417,10 +429,13 @@ async function loadLotesData() {
             verticalOrigin: window.Cesium.VerticalOrigin.CENTER,
             pixelOffset: new window.Cesium.Cartesian2(0, 0),
             // Combinar elevación física con disableDepthTestDistance para asegurar visibilidad
-            disableDepthTestDistance: 0.3, // Pequeño valor para respetar modelos 3D pero ignorar polígonos cercanos
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
             scale: getLabelScale(),
-            heightReference: window.Cesium.HeightReference.NONE, // Usar posición absoluta ya que la elevamos manualmente
-            show: !!lote,
+            heightReference: window.Cesium.HeightReference.NONE, 
+            show: (() => {
+              const num = entity.properties.number ? entity.properties.number.getValue() : "";
+              return !!num && !!lote;
+            })(),
           },
         });
         polygonLabels.push(labelEntity);
@@ -429,7 +444,7 @@ async function loadLotesData() {
 
     // Add Mykonos marker
     const referencePoint = window.Cesium.Cartesian3.fromDegrees(-71.51364042644347, -17.257430143234867);
-    const MAX_DISTANCE = 550;
+    const MAX_DISTANCE = 20000;
     const MARKER_SHOW_DISTANCE = 10300;
     const mykonosMarker = viewer.entities.add({
       id: "mykonos_marker",
@@ -468,13 +483,19 @@ async function loadLotesData() {
 
       // Control lot label visibility
       polygonLabels.forEach((entity) => {
-        const show = distance < MAX_DISTANCE;
+        const showByDistance = distance < MAX_DISTANCE;
+        const num = entity.properties && entity.properties.number ? entity.properties.number.getValue() : "";
+        const hasText = !!num;
+
         if (entity.label) {
-          entity.label.show = show;
-          if (distance <= NEAR_DISTANCE) {
-            entity.label.scale = 1.5;
-          } else if (distance >= FAR_DISTANCE) {
+          // Mostrar solo si está en rango, tiene texto Y el modo actual permite etiquetas
+          entity.label.show = showByDistance && hasText && (window.showLoteLabels !== false);
+          if (distance <= 1000) {
             entity.label.scale = 1.0;
+          } else if (distance <= 5000) {
+            entity.label.scale = 1.3;
+          } else {
+            entity.label.scale = 1.6;
           }
         }
       });
@@ -1068,6 +1089,16 @@ function extractLotesPositions(lotesData) {
             window.Cesium.Cartesian3.fromDegrees(coord[0], coord[1])
           );
         });
+      } else if (feature.geometry.type === "MultiPolygon") {
+        // For multipolygons, iterate through all polygons and their exterior rings
+        coords.forEach((polygonCoords) => {
+          const ring = polygonCoords[0];
+          ring.forEach((coord) => {
+            positions.push(
+              window.Cesium.Cartesian3.fromDegrees(coord[0], coord[1])
+            );
+          });
+        });
       } else if (feature.geometry.type === "Point") {
         // For points
         positions.push(
@@ -1266,6 +1297,9 @@ function hoverMarcadores() {
 // Sidebar
 
 function reiniciarMenu() {
+  // Ocultar etiquetas de lotes por defecto al cambiar de modo
+  window.showLoteLabels = false;
+
   // Remove active classes from all sidebar buttons
   const fotosBtn = document.getElementById("fotos");
   const areasBtn = document.getElementById("areas");
@@ -1673,6 +1707,9 @@ window.setLotRangeConfig = function (config = {}) {
 
 function handleLotes() {
   reiniciarMenu();
+  
+  // Activar etiquetas de lotes en este modo
+  window.showLoteLabels = true;
 
   // Activate lots button
   const lotesBtn = document.getElementById("lotes");
@@ -1783,12 +1820,20 @@ window.handleLotCardClick = function (lotNumber) {
   const allEntities = viewer.dataSources.get(0).entities.values;
 
   // Extraer manzana y lote del lot.number
-  const lot = lotNumber; // "Mz. E - Lote 15"
-  const manzanaMatch = lot.match(/Mz\.\s*([A-Z]+)/);
-  const loteMatch = lot.match(/Lote\s*(\d+)/);
-
-  const manzana = manzanaMatch ? manzanaMatch[1] : ""; // "E"
-  const loteNum = loteMatch ? loteMatch[1] : ""; // "15"
+  const lot = lotNumber; // "Mz. E - Lote 15" o "Parcela 1"
+  
+  let manzana = "";
+  let loteNum = "";
+  
+  if (lot.toLowerCase().startsWith("parcela")) {
+    manzana = "Parcela";
+    loteNum = lot.split(" ")[1];
+  } else {
+    const manzanaMatch = lot.match(/Mz\.\s*([A-Za-z0-9]+)/i);
+    const loteMatch = lot.match(/Lote\s*(\d+)/);
+    manzana = manzanaMatch ? manzanaMatch[1] : "";
+    loteNum = loteMatch ? loteMatch[1] : "";
+  }
 
   // Buscar por manzana y lote en las propiedades
   const lotEntity = allEntities.find((entity) => {
