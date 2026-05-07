@@ -88,10 +88,10 @@ function getLabelOutlineWidth() {
 }
 
 // Lot colors
-const disponible = window.Cesium.Color.fromCssColorString("#00BA13");
-const reservado = window.Cesium.Color.fromCssColorString("#F5E200");
-const vendido = window.Cesium.Color.fromCssColorString("#D11F00");
-const negociacion = window.Cesium.Color.fromCssColorString("#FFA500");
+const disponible = window.Cesium.Color.fromCssColorString("#F0E68C"); // Khaki / Pale Yellow
+const reservado = window.Cesium.Color.fromCssColorString("#F08080"); // Light Coral
+const vendido = window.Cesium.Color.fromCssColorString("#87CEFA");    // Light Sky Blue
+const negociacion = window.Cesium.Color.fromCssColorString("#FFB347"); // Pastel Orange
 const modeSelected = window.Cesium.Color.fromCssColorString("#FFFFFF");
 
 function getStatusColor(status) {
@@ -588,7 +588,7 @@ async function loadLotesData() {
           typeof estadoProp?.getValue === "function"
             ? estadoProp.getValue()
             : estadoProp;
-        const baseMaterial = getStatusColor(estadoValue).withAlpha(0.5);
+        const baseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
 
         // Assign the material and save the base material for restoration
         e.polygon.material = baseMaterial;
@@ -1382,6 +1382,9 @@ function reiniciarMenu() {
 
   // Return to lots view
   flyToLotesView();
+
+  // Dispatch event to reset sidebar state in React
+  window.dispatchEvent(new CustomEvent("reiniciarMenu"));
 }
 
 // Fotos 360°
@@ -2551,7 +2554,7 @@ function toggleGrid() {
         typeof estadoProp?.getValue === "function"
           ? estadoProp.getValue()
           : estadoProp;
-      e._baseMaterial = getStatusColor(estadoValue).withAlpha(0.5);
+      e._baseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
       if (e !== selected) {
         e.polygon.material = e._baseMaterial;
       }

@@ -537,20 +537,20 @@ const LotInfoModal = ({
   const normalizedLotStatus = (lotData.status || "").toLowerCase();
   const statusColorConfig: Record<string, { background: string; border: string }> = {
     disponible: {
-      background: "rgba(29, 183, 121, 0.2)",
-      border: "#1DB779",
+      background: "rgba(240, 230, 140, 0.15)",
+      border: "#F0E68C",
     },
     reservado: {
-      background: "rgba(251, 224, 73, 0.2)",
-      border: "#FBE049",
+      background: "rgba(240, 128, 128, 0.15)",
+      border: "#F08080",
     },
     negociacion: {
-      background: "rgba(255, 165, 0, 0.2)",
-      border: "#FFA500",
+      background: "rgba(255, 179, 71, 0.15)",
+      border: "#FFB347",
     },
     vendido: {
-      background: "rgba(251, 73, 73, 0.2)",
-      border: "#FB4949",
+      background: "rgba(135, 206, 250, 0.15)",
+      border: "#87CEFA",
     },
   };
   const statusColors = statusColorConfig[normalizedLotStatus] || statusColorConfig.vendido;
