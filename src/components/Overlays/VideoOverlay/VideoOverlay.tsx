@@ -11,7 +11,7 @@ interface VideoOverlayProps {
 const VideoOverlay = ({ 
   isVisible = false, 
   onClose,
-  videoSrc = '/images/sidebar/video/video.mp4',
+  videoSrc = '/images/sidebar/video/video2.mp4',
   videoType = 'video/mp4'
 }: VideoOverlayProps) => {
   // const [isAnimating, setIsAnimating] = useState(false); // Not used
