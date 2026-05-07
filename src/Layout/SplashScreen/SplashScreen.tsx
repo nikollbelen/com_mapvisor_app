@@ -10,7 +10,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    // Ocultar splash screen después de 2 segundos
+    // Ocultar splash screen después de 3.5 segundos (2s originales + 1.5s extra)
     const timer = setTimeout(() => {
       setIsFading(true);
       
@@ -19,7 +19,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         setIsVisible(false);
         onComplete?.(); // Notificar que el splash screen terminó
       }, 800);
-    }, 2000);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -65,7 +65,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
       {/* VERTICAL DESIGN (Mobile/Portrait) */}
       <div className="splash-main-vertical vertical-only">
         <div className="top-content">
-          <span className="material-symbols-outlined top-icon">landscape</span>
+          <span className="material-symbols-outlined top-icon" style={{ fontVariationSettings: '"FILL" 1' }}>domain</span>
           <h1 className="splash-title-v">LOMAS DE JESÚS</h1>
           <p className="splash-subtitle-v">LUXURY RETREAT</p>
         </div>
@@ -73,7 +73,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         <div className="center-element">
           <div className="center-blur"></div>
           <div className="center-ring"></div>
-          <span className="material-symbols-outlined center-icon">architecture</span>
+          <span className="material-symbols-outlined center-icon" style={{ fontVariationSettings: '"FILL" 1' }}>domain</span>
         </div>
 
         <div className="bottom-content">
@@ -86,7 +86,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
 
       {/* UI Overlay (Horizontal) */}
       <div className="ui-overlay horizontal-only">
-        <span className="material-symbols-outlined text-gold text-[16px]">architecture</span>
+        <span className="material-symbols-outlined text-gold text-[16px]" style={{ fontVariationSettings: '"FILL" 1' }}>domain</span>
         <span className="material-symbols-outlined text-gold text-[16px]">vrpano</span>
         <span className="material-symbols-outlined text-gold text-[16px]">landscape</span>
       </div>

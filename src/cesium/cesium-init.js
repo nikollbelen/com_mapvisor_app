@@ -994,7 +994,7 @@ function setupLoteInteractions() {
         // Avoid highlighting if already selected
         if (highlighted !== entity && entity !== selected) {
           highlighted = entity;
-          if (btnGrid.classList.contains("active")) {
+          if (btnGrid?.classList.contains("active")) {
             const estadoProp = entity.properties?.estado;
             const estadoValue =
               typeof estadoProp?.getValue === "function"
@@ -1048,7 +1048,7 @@ function setupLoteInteractions() {
     selected = entity;
     selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
     
-    if (btnGrid.classList.contains("active")) {
+    if (btnGrid?.classList.contains("active")) {
     const estadoProp = entity.properties?.estado;
     const estadoValue =
       typeof estadoProp?.getValue === "function"

@@ -1710,53 +1710,9 @@ const LotInfoModal = ({
     }
   };
 
-  const handleWhatsAppClick = async () => {
-    try {
-      // Obtener un agente aleatorio desde la API
-      const response = await fetch(`${BASE_API}/users/random-agent/${PROJECT_ID}`, {
-        headers: {
-          'ngrok-skip-browser-warning': 'true'
-        },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al obtener agente aleatorio');
-      }
-
-      const result = await response.json();
-      
-      if (!result.success || !result.data) {
-        alert('No hay agentes disponibles en este momento. Por favor, intente más tarde.');
-      return;
-    }
-
-      const agent = result.data;
-      
-      // Verificar que el agente tenga número de teléfono
-      if (!agent.phone) {
-        alert('El agente no tiene número de teléfono disponible.');
-        return;
-      }
-    
-    // Crear mensaje para WhatsApp
-    const loteInfo = lotData?.lot || 'N/A';
-      const agentName = agent.full_name || 'agente';
-      const message = `Hola ${agentName}, me interesa obtener más información sobre el lote ${loteInfo}. Por favor, contácteme.`;
-    const encodedMessage = encodeURIComponent(message);
-    
-      // Limpiar el número de teléfono (remover espacios, guiones, etc.)
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-  
-      // Usar el número de teléfono del agente
-      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-    
-    // Abrir WhatsApp en una nueva ventana
-    window.open(whatsappUrl, '_blank');
-    } catch (error) {
-      console.error('Error al obtener agente aleatorio:', error);
-      alert('Error al conectar con el servicio. Por favor, intente más tarde.');
-    }
+  const handleWhatsAppClick = () => {
+    const whatsappUrl = "https://api.whatsapp.com/send/?phone=%2B51972874234&text&type=phone_number&app_absent=0";
+    window.open(whatsappUrl, "_blank");
   };
 
 
@@ -3060,1217 +3016,374 @@ const LotInfoModal = ({
   }, [isVisible]);
 
   return (
-    <div
-      className={`lot-modal background-container border-container ${ isVisible ? 'show' : 'hide' }`}
-      id="modalOverlay"
-    >
-      {/* Cara frontal - Información del lote */}
-      <div
-        className="lot-modal-front"
-        style={{ display: showQuotation ? "none" : "flex" }}
-      >
-        <a
-          className="lot-modal-back-link"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleClose();
-          }}
-        >
-          <i className="fas fa-arrow-left"></i>
-          <span>Volver</span>
-        </a>
+    <div className={`lot-modal-overlay ${isVisible ? 'show' : 'hide'}`} id="modalOverlay">
+      <div className={`lot-modal ${showQuotation ? 'flip' : ''}`}>
+        
+        {/* Cara frontal - Información del lote */}
+        <div className="lot-modal-front">
+          <button className="lot-modal-close" onClick={handleClose}>
+            <span className="material-symbols-outlined">close</span>
+          </button>
 
-        <div className="lot-modal-header">
-          <div className="lot-modal-logo">
-            <h1 className="project-text-logo">MVP Lomas de Jesús</h1>
+          <div className="lot-modal-header">
+            <div className="lot-modal-logo-container">
+              <span className="material-symbols-outlined lot-modal-logo-icon">domain</span>
+            </div>
+
           </div>
-        </div>
 
-        <div className="lot-modal-content">
-          <div className="lot-identification">
-              <div className="lot-stage-badge">Etapa {lotData.phase || "1"}</div>
-            <div className="lot-center">
+          <div className="lot-modal-content">
+            <div className="lot-identification">
               <div className="lot-box">
                 <span id="modalLot">{getLotWithoutPhase(lotData.lot)}</span>
               </div>
-            </div>
-            <div
-              className="lot-status-badge"
-              style={{ 
-                backgroundColor: statusColors.background,
-                borderColor: statusColors.border,
-                borderStyle: 'solid', 
-                borderWidth: '1px' 
-            }}
-              id="modalStatus"
-            >
-              {statusLabel}
-            </div>
-          </div>
-
-          <div className="lot-property-details">
-            <div className="lot-detail-row">
-              <span className="lot-detail-label">Precio</span>
-              <span className="lot-detail-value" id="modalPrice">
-                {lotData.price}
-              </span>
-            </div>
-            <div className="lot-detail-row">
-              <span className="lot-detail-label">Área</span>
-              <span className="main-detail-value" id="modalArea">
-                {lotData.area}
-              </span>
-            </div>
-          </div>
-
-          <div className="lot-boundaries-section">
-            <h3 className="lot-boundaries-title">Colindancias</h3>
-            <div className="lot-boundaries-card">
-              <div className="lot-boundary-item">
-                <div className="lot-boundary-icon">
-                  <img
-                    src="/images/lote/izquierda.svg"
-                    alt="Izquierda"
-                    className="lot-boundary-icon-svg"
-                  />
-                </div>
-                <span className="lot-boundary-label">Izquierda</span>
-                <span className="lot-boundary-value" id="modalLeft">
-                  {lotData.boundaries?.left || "N/A"}
-                </span>
-              </div>
-              <div className="lot-boundary-item">
-                <div className="lot-boundary-icon">
-                  <img
-                    src="/images/lote/derecha.svg"
-                    alt="Derecha"
-                    className="lot-boundary-icon-svg"
-                  />
-                </div>
-                <span className="lot-boundary-label">Derecha</span>
-                <span className="lot-boundary-value" id="modalRight">
-                  {lotData.boundaries?.right || "N/A"}
-                </span>
-              </div>
-              <div className="lot-boundary-item">
-                <div className="lot-boundary-icon">
-                  <img
-                    src="/images/lote/frente.svg"
-                    alt="Frente"
-                    className="lot-boundary-icon-svg"
-                  />
-                </div>
-                <span className="lot-boundary-label">Frente</span>
-                <span className="lot-boundary-value" id="modalFront">
-                  {lotData.boundaries?.front || "N/A"}
-                </span>
-              </div>
-              <div className="lot-boundary-item">
-                <div className="lot-boundary-icon">
-                  <img
-                    src="/images/lote/fondo.svg"
-                    alt="Fondo"
-                    className="lot-boundary-icon-svg"
-                  />
-                </div>
-                <span className="lot-boundary-label">Fondo</span>
-                <span className="lot-boundary-value" id="modalBack">
-                  {lotData.boundaries?.back || "N/A"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Botones condicionales según el estado de login */}
-          {userState ? (
-            // Usuario logueado: Solo botón de cotizar
-            <button className="lot-whatsapp-btn" style={{ 
-                  background: lotData.status === 'disponible' 
-                    ? '#1DB779'  
-                    : 'linear-gradient(135deg, #333 0%, #444 100%)' 
-                }} onClick={lotData.status === 'disponible' ? handleQuotationClick : undefined}>
-              <span>{lotData.status === 'disponible' ? 'Cotizar' : 'Lote no disponible'}</span>
-            </button>
-          ) : (
-            // Usuario no logueado: Dos botones
-            <div className="lot-buttons-container">
-              <button 
-                className="lot-contact-btn" 
-                onClick={handleWhatsAppClick}
-                disabled={lotData.status !== 'disponible'}
+              <div className="lot-stage-badge">Etapa {lotData.phase || "1"}</div>
+              <div
+                className="lot-status-badge"
+                style={{ 
+                  backgroundColor: statusColors.background,
+                  color: statusColors.border,
+                  border: `1px solid ${statusColors.border}`
+                }}
+                id="modalStatus"
               >
-                <i className="fab fa-whatsapp"></i>
-                <span>Contactar</span>
-              </button>
+                {statusLabel}
+              </div>
+            </div>
+
+            <div className="lot-property-details">
+              <div className="lot-detail-row">
+                <span className="lot-detail-label">Área del Lote</span>
+                <span className="lot-detail-value">{lotData.area}</span>
+              </div>
+              <div className="lot-detail-row">
+                <span className="lot-detail-label">Precio de Lista</span>
+                <span className="lot-detail-value price">{lotData.price}</span>
+              </div>
+            </div>
+
+            <div className="lot-boundaries-section">
+              <h3 className="lot-boundaries-title">Dimensiones y Colindancias</h3>
+              <div className="lot-boundaries-grid">
+                <div className="lot-boundary-item">
+                  <div className="lot-boundary-icon">
+                    <span className="material-symbols-outlined">west</span>
+                  </div>
+                  <div className="lot-boundary-info">
+                    <span className="lot-boundary-label">Izquierda</span>
+                    <div className="lot-boundary-value">{lotData.boundaries?.left || "0.00ML"}</div>
+                  </div>
+                </div>
+                <div className="lot-boundary-item">
+                  <div className="lot-boundary-icon">
+                    <span className="material-symbols-outlined">east</span>
+                  </div>
+                  <div className="lot-boundary-info">
+                    <span className="lot-boundary-label">Derecha</span>
+                    <div className="lot-boundary-value">{lotData.boundaries?.right || "0.00ML"}</div>
+                  </div>
+                </div>
+                <div className="lot-boundary-item">
+                  <div className="lot-boundary-icon">
+                    <span className="material-symbols-outlined">north</span>
+                  </div>
+                  <div className="lot-boundary-info">
+                    <span className="lot-boundary-label">Frente</span>
+                    <div className="lot-boundary-value">{lotData.boundaries?.front || "0.00ML"}</div>
+                  </div>
+                </div>
+                <div className="lot-boundary-item">
+                  <div className="lot-boundary-icon">
+                    <span className="material-symbols-outlined">south</span>
+                  </div>
+                  <div className="lot-boundary-info">
+                    <span className="lot-boundary-label">Fondo</span>
+                    <div className="lot-boundary-value">{lotData.boundaries?.back || "0.00ML"}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lot-buttons-container">
+              {!userState && (
+                <button 
+                  className="lot-contact-btn" 
+                  onClick={handleWhatsAppClick}
+                  disabled={lotData.status !== 'disponible'}
+                >
+                  <span className="material-symbols-outlined">chat</span>
+                  <span>Contactar</span>
+                </button>
+              )}
               <button 
                 className="lot-whatsapp-btn" 
                 style={{ 
-                  background: lotData.status === 'disponible' 
-                    ? '#1DB779'  
-                    : 'linear-gradient(135deg, #333 0%, #444 100%)' 
+                  opacity: lotData.status === 'disponible' ? 1 : 0.6,
+                  cursor: lotData.status === 'disponible' ? 'pointer' : 'not-allowed'
                 }} 
                 onClick={lotData.status === 'disponible' ? handleQuotationClick : undefined}
               >
-                <span>{lotData.status === 'disponible' ? 'Cotizar' : 'Lote no disponible'}</span>
+                <span className="material-symbols-outlined">calculate</span>
+                <span>{lotData.status === 'disponible' ? 'Cotizar Ahora' : 'Lote no disponible'}</span>
               </button>
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Cara trasera - Cotización */}
-      <div
-        className="lot-modal-back"
-        style={{ display: showQuotation ? "flex" : "none" }}
-      >
-        <a
-          className="lot-modal-back-link"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleBackToLot();
-          }}
-        >
-          <i className="fas fa-arrow-left"></i>
-          <span>Volver</span>
-        </a>
-
-        <div className="quotation-header">
-          <button className="quotation-close-btn" onClick={handleClose}>
-            <i className="fas fa-times"></i>
+        {/* Cara trasera - Cotización */}
+        <div className="lot-modal-back">
+          <button className="lot-modal-back-link" onClick={handleBackToLot}>
+            <span className="material-symbols-outlined">arrow_back</span>
+            <span>Volver a Información</span>
           </button>
-        </div>
-          <div className="quotation-title">
-            <span>Cotización de Lote</span>
-          <div className="quotation-divider"></div>
-        </div>
 
-          <div className="section-header">
-              <h2 className="section-title">Cronograma de pago</h2>
-              <button className="clear-link" onClick={handleClearSchedule}>Limpiar</button>
-            </div>
-          
+          <div className="lot-modal-content">
+            <h2 className="quotation-title">Cotización del Lote</h2>
 
-        <div className="lot-modal-content">
-          {/* Detalles del lote */}
-          <div className="quotation-details-section">
-            <div className="quotation-table">
-              <div className="quotation-table-header">
-                <div className="quotation-header-cell">Item</div>
-                <div className="quotation-header-cell">Etapa</div>
-                <div className="quotation-header-cell">Unidad</div>
-                <div className="quotation-header-cell">Monto</div>
-                <div className="quotation-header-cell">Descuento</div>
+            <div className="quotation-details-section">
+              <div className="quotation-table-row">
+                <div className="quotation-cell item-name">Unidad Seleccionada</div>
+                <div className="quotation-cell item-value">{getLotWithoutPhase(lotData.lot)}</div>
               </div>
               <div className="quotation-table-row">
-                <div className="quotation-cell item-name">Lote</div>
-                <div className="quotation-cell item-value">{lotData.phase || "1"}</div>
+                <div className="quotation-cell item-name">Precio de Lista</div>
+                <div className="quotation-cell item-value">{lotData.price}</div>
+              </div>
+              <div className="quotation-table-row">
+                <div className="quotation-cell item-name">Descuento Aplicado</div>
                 <div className="quotation-cell item-value">
-                  {(() => {
-                    // Parse format "Mz. E - Lote 7" to "E7"
-                    if (loteData?.direccion) {
-                      const match = loteData.direccion.match(
-                        /Mz\.\s*([A-Z])\s*-\s*Lote\s*(\d+)/
-                      );
-                      if (match) {
-                        return `${match[1]}${match[2]}`;
+                  <input
+                    type="text"
+                    className="discount-input"
+                    value={getFormattedValue(discountAmount, 'usd', 'discount-amount')}
+                    onFocus={() => handleInputFocus('discount-amount')}
+                    onBlur={() => handleDecimalBlur('discount-amount', (amount) => {
+                      if (maxDiscount !== null && amount > ((maxDiscount / 100) * (loteData?.precio || 0))) {
+                        setDiscountError(`El descuento máximo es del ${maxDiscount}%`);
+                        setDiscountAmount(0);
+                        setDiscountPercentage(0);
+                      } else {
+                        setDiscountError('');
+                        setDiscountAmount(amount);
+                        const pct = (amount / (loteData?.precio || 1)) * 100;
+                        setDiscountPercentage(pct);
                       }
-                    }
-                    // Fallback to manzana + numero if available
-                    if (loteData?.manzana && loteData?.numero) {
-                      return `${loteData.manzana}${loteData.numero}`;
-                    }
-                    return "M4";
-                  })()}
+                      setNeedsUpdate(true);
+                    })}
+                    onChange={(e) => {
+                      handleDecimalInput(e.target.value, 'discount-amount', (amount) => {
+                        setDiscountAmount(amount);
+                        setNeedsUpdate(true);
+                      });
+                    }}
+                  />
                 </div>
-                <div className="quotation-cell item-value">
-                  $
-                  {loteData?.precio
-                    ? loteData.precio.toLocaleString()
-                    : "445,000.00"}
-                </div>
-                <div className="quotation-cell">
-                  <div className="discount-badges">
-                    <input
-                      type="text"
-                      className="discount-input"
-                      placeholder="$ 0.00"
-                      value={getFormattedValue(discountAmount, 'usd', 'discount-amount')}
-                      onFocus={() => handleInputFocus('discount-amount')}
-                      onBlur={() => handleDecimalBlur('discount-amount', (amount) => {
-                        applyDiscountFromAmount(amount);
-                      })}
-                      onChange={(e) => handleDiscountChange(e, "amount")}
-                    />
-                    <input
-                      type="text"
-                      className="discount-input"
-                      placeholder="0.00%"
-                      value={getFormattedValue(discountPercentage, 'percentage', 'discount-percentage')}
-                      onFocus={() => handleInputFocus('discount-percentage')}
-                      onBlur={() => handleDecimalBlur('discount-percentage', (percentage) => {
-                        applyDiscountFromPercentage(percentage);
-                      })}
-                      onChange={(e) => handleDiscountChange(e, "percentage")}
-                    />
-                  </div>
-                  {discountError && (
-                    <div className="error-message" style={{ marginTop: '6px' }}>
-                      {discountError}
-                    </div>
-                  )}
+              </div>
+              <div className="quotation-table-row total-row">
+                <div className="quotation-cell item-name total-label">Precio Final</div>
+                <div className="quotation-cell item-value total-value">
+                  ${" "}{( (loteData?.precio || 0) - discountAmount ).toLocaleString()}
                 </div>
               </div>
             </div>
 
-            <div className="discount-row">
-              <div className="discount-label">dsto:</div>
-              <div className="discount-value">
-                <span>$</span>
-                <span>-{discountAmount.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="total-row" style={{ display: 'flex' }}>
-              <div className="total-label">Total:</div>
-              <div className="total-value">
-                ${" "}
-                {(
-                  (loteData?.precio || 445000) - discountAmount
-                ).toLocaleString()}
-              </div>
-            </div>
-          </div>
-
-          {/* Cronograma de Pago */}
-          <div className="payment-schedule-section">
-
-            <div className="payment-form">
-              <div className="form-group">
-                <label className="form-label">Modalidad de Pago</label>
-                <select
-                  className="form-select"
-                  value={paymentMethod}
-                  onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                >
-                  {/* <option value="credito_hipotecario">
-                    Crédito Hipotecario
-                  </option> */}
-                  <option value="credito_directo">Crédito Directo</option>
-                  <option value="contado">Contado</option>
-                </select>
-              </div>
-
+            <div className="payment-schedule-section">
+              <h3 className="section-title">
+                <span className="material-symbols-outlined">payments</span>
+                Forma de Pago
+              </h3>
               
-              {paymentMethod === "credito_hipotecario" && (
-                <>
-                  <div className="form-group">
-                    <label className="form-label">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={separation.enabled}
-                        onChange={(e) => {
-                          setSeparation({
-                            ...separation,
-                            enabled: e.target.checked,
-                          });
-                          setNeedsUpdate(true);
-                        }}
-                      />
-                      Separación
-                    </label>
-                    {separation.enabled && (
+              <div className="payment-form">
+                <div className="form-group">
+                  <label className="form-label">Modalidad</label>
+                  <select
+                    className="form-select"
+                    value={paymentMethod}
+                    onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                  >
+                    <option value="credito_directo">Crédito Directo</option>
+                    <option value="contado">Contado</option>
+                  </select>
+                </div>
+
+                {paymentMethod === "credito_directo" && (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Separación</label>
                       <div className="input-group">
                         <input
                           type="text"
                           className="form-input"
-                          placeholder="0.00 USD"
-                          value={getFormattedValue(separation.amount, 'usd', 'separation-amount-hipotecario')}
-                          onFocus={() => handleInputFocus('separation-amount-hipotecario')}
-                          onBlur={() => handleDecimalBlur('separation-amount-hipotecario', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) -
-                                  discountAmount)) *
-                              100;
-                            setSeparation({
-                              amount,
-                              percentage,
-                              enabled: true,
-                            });
-                            handleFieldChange("separation");
-                          })}
-                          onChange={(e) => {
-                            handleDecimalInput(e.target.value, 'separation-amount-hipotecario', (amount) => {
-                              const percentage =
-                                (amount /
-                                  ((loteData?.precio || 445000) -
-                                    discountAmount)) *
-                                100;
-                              setSeparation({
-                                amount,
-                                percentage,
-                                enabled: true,
-                              });
-                              handleFieldChange("separation");
-                            });
-                          }}
-                        />
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="0.00 %"
-                          value={getFormattedValue(separation.percentage, 'percentage', 'separation-percentage-hipotecario')}
-                          onFocus={() => handleInputFocus('separation-percentage-hipotecario')}
-                          onBlur={() => handleDecimalBlur('separation-percentage-hipotecario', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setSeparation({
-                              amount,
-                              percentage: validatedPercentage,
-                              enabled: true,
-                            });
-                            handleFieldChange("separation");
-                          })}
-                          onChange={(e) => {
-                            handleDecimalInput(e.target.value, 'separation-percentage-hipotecario', (percentage) => {
-                              const validatedPercentage = validatePercentage(percentage);
-                              const amount =
-                                (validatedPercentage / 100) *
-                                ((loteData?.precio || 445000) - discountAmount);
-                              setSeparation({
-                                amount,
-                                percentage: validatedPercentage,
-                                enabled: true,
-                              });
-                              handleFieldChange("separation");
-                            });
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Inicial</label>
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 USD"
-                          value={getFormattedValue(initial.amount, 'usd', 'initial-amount-hipotecario')}
-                          onFocus={() => handleInputFocus('initial-amount-hipotecario')}
-                          onBlur={() => handleDecimalBlur('initial-amount-hipotecario', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) - discountAmount)) *
-                              100;
-                            setInitial({ amount, percentage });
-                            handleFieldChange("initial");
-
-                            // Log después de setInitial para ver si se modifica el schedule
-                            setTimeout(() => {
-                            }, 100);
-                          })}
-                        onChange={(e) => {
-                          handleDecimalInput(e.target.value, 'initial-amount-hipotecario', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) - discountAmount)) *
-                              100;
-                            setInitial({ amount, percentage });
-                            handleFieldChange("initial");
-
-                            // Log después de setInitial para ver si se modifica el schedule
-                            setTimeout(() => {
-                            }, 100);
-                          });
-                        }}
-                      />
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 %"
-                          value={getFormattedValue(initial.percentage, 'percentage', 'initial-percentage-hipotecario')}
-                          onFocus={() => handleInputFocus('initial-percentage-hipotecario')}
-                          onBlur={() => handleDecimalBlur('initial-percentage-hipotecario', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setInitial({ amount, percentage: validatedPercentage });
-                            handleFieldChange("initial");
-
-                          })}
-                        onChange={(e) => {
-                          handleDecimalInput(e.target.value, 'initial-percentage-hipotecario', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setInitial({ amount, percentage: validatedPercentage });
-                            handleFieldChange("initial");
-
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Crédito Hipotecario</label>
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 USD"
-                          value={getFormattedValue(mortgageCredit.amount, 'usd', 'mortgage-credit-amount')}
-                          onFocus={() => handleInputFocus('mortgage-credit-amount')}
-                          onBlur={() => handleDecimalBlur('mortgage-credit-amount', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) - discountAmount)) *
-                              100;
-                            setMortgageCredit({ amount, percentage });
-                            handleFieldChange("mortgageCredit");
-                          })}
-                        onChange={(e) => {
-                          handleDecimalInput(e.target.value, 'mortgage-credit-amount', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) - discountAmount)) *
-                              100;
-                            setMortgageCredit({ amount, percentage });
-                            handleFieldChange("mortgageCredit");
-                          });
-                        }}
-                      />
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 %"
-                          value={getFormattedValue(mortgageCredit.percentage, 'percentage', 'mortgage-credit-percentage')}
-                          onFocus={() => handleInputFocus('mortgage-credit-percentage')}
-                          onBlur={() => handleDecimalBlur('mortgage-credit-percentage', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setMortgageCredit({ amount, percentage: validatedPercentage });
-                            handleFieldChange("mortgageCredit");
-                          })}
-                        onChange={(e) => {
-                          handleDecimalInput(e.target.value, 'mortgage-credit-percentage', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setMortgageCredit({ amount, percentage: validatedPercentage });
-                            handleFieldChange("mortgageCredit");
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Carta de Aprobación</label>
-                    <button className="upload-btn">Subir Archivo</button>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Número de Cuotas</label>
-                    <div className="input-group">
-                      <div className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          className="checkbox"
-                          checked={equivalentInstallments}
-                          onChange={(e) => {
-                            setEquivalentInstallments(e.target.checked);
-                            setNeedsUpdate(true);
-                          }}
-                        />
-                        <span>Cuotas Equivalentes</span>
-                      </div>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="2 cuotas"
-                          value={getFormattedValue(numberOfInstallments, 'cuotas', 'number-of-installments')}
-                          onFocus={() => handleInputFocus('number-of-installments')}
-                          onBlur={() => handleInputBlur('number-of-installments')}
-                        onChange={(e) => {
-                          const value =
-                            parseInt(e.target.value.replace(/[^0-9]/g, "")) ||
-                            0;
-                          setNumberOfInstallments(value);
-                            setNeedsUpdate(true);
-                          }}
-                        />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Primer y Último Pago</label>
-                    <div className="input-group">
-                      <input
-                        type="date"
-                        className={`date-input ${dateError ? "error" : ""}`}
-                        placeholder="dd/mm/aaaa"
-                        value={toDateInputValue(firstPaymentDate)}
-                        onChange={(e) => handleDateChange(fromDateInputValue(e.target.value))}
-                        onBlur={(e) => handleDateBlur(fromDateInputValue(e.target.value))}
-                      />
-                      <input
-                        type="date"
-                        className="date-input readonly"
-                        placeholder="dd/mm/aaaa"
-                        value={toDateInputValue(calculatedFinalDate)}
-                        readOnly
-                      />
-                    </div>
-                    {dateError && (
-                      <div className="date-error-message">{dateError}</div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {paymentMethod === "credito_directo" && (
-                <>
-                  <div className="form-group">
-                    <label className="form-label">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={separation.enabled}
-                        onChange={(e) => {
-                          setSeparation({
-                            ...separation,
-                            enabled: e.target.checked,
-                          });
-                          setNeedsUpdate(true);
-                        }}
-                      />
-                      Separación
-                    </label>
-                    {separation.enabled && (
-                      <div className="input-group">
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="0.00 USD"
+                          placeholder="Monto USD"
                           value={getFormattedValue(separation.amount, 'usd', 'separation-amount-directo')}
                           onFocus={() => handleInputFocus('separation-amount-directo')}
                           onBlur={() => handleDecimalBlur('separation-amount-directo', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) -
-                                  discountAmount)) *
-                              100;
-                            setSeparation({
-                              amount,
-                              percentage,
-                              enabled: true,
-                            });
-                            handleFieldChange("separation");
+                            const percentage = (amount / ((loteData?.precio || 0) - discountAmount)) * 100;
+                            setSeparation({ amount, percentage, enabled: true });
+                            setNeedsUpdate(true);
                           })}
                           onChange={(e) => {
                             handleDecimalInput(e.target.value, 'separation-amount-directo', (amount) => {
-                              const percentage =
-                                (amount /
-                                  ((loteData?.precio || 445000) -
-                                    discountAmount)) *
-                                100;
-                              setSeparation({
-                                amount,
-                                percentage,
-                                enabled: true,
-                              });
-                              handleFieldChange("separation");
+                              setSeparation({ ...separation, amount, enabled: true });
+                              setNeedsUpdate(true);
                             });
                           }}
                         />
                         <input
                           type="text"
                           className="form-input"
-                          placeholder="0.00 %"
+                          placeholder="Porcentaje %"
                           value={getFormattedValue(separation.percentage, 'percentage', 'separation-percentage-directo')}
                           onFocus={() => handleInputFocus('separation-percentage-directo')}
                           onBlur={() => handleDecimalBlur('separation-percentage-directo', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setSeparation({
-                              amount,
-                              percentage: validatedPercentage,
-                              enabled: true,
-                            });
-                            handleFieldChange("separation");
+                            const amount = (percentage / 100) * ((loteData?.precio || 0) - discountAmount);
+                            setSeparation({ amount, percentage, enabled: true });
+                            setNeedsUpdate(true);
                           })}
                           onChange={(e) => {
                             handleDecimalInput(e.target.value, 'separation-percentage-directo', (percentage) => {
-                              const validatedPercentage = validatePercentage(percentage);
-                              const amount =
-                                (validatedPercentage / 100) *
-                                ((loteData?.precio || 445000) - discountAmount);
-                              setSeparation({
-                                amount,
-                                percentage: validatedPercentage,
-                                enabled: true,
-                              });
-                              handleFieldChange("separation");
+                              setSeparation({ ...separation, percentage, enabled: true });
+                              setNeedsUpdate(true);
                             });
                           }}
                         />
                       </div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Inicial</label>
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 USD"
-                          value={getFormattedValue(initial.amount, 'usd', 'initial-amount-directo')}
-                          onFocus={() => handleInputFocus('initial-amount-directo')}
-                          onBlur={() => handleDecimalBlur('initial-amount-directo', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) - discountAmount)) *
-                              100;
-                            setInitial({ amount, percentage });
-                            handleFieldChange("initial");
-
-                          })}
-                        onChange={(e) => {
-                          handleDecimalInput(e.target.value, 'initial-amount-directo', (amount) => {
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) - discountAmount)) *
-                              100;
-                            setInitial({ amount, percentage });
-                            handleFieldChange("initial");
-
-                            // Log después de setInitial para ver si se modifica el schedule
-                            setTimeout(() => {
-                            }, 100);
-                          });
-                        }}
-                      />
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 %"
-                          value={getFormattedValue(initial.percentage, 'percentage', 'initial-percentage-directo')}
-                          onFocus={() => handleInputFocus('initial-percentage-directo')}
-                          onBlur={() => handleDecimalBlur('initial-percentage-directo', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setInitial({ amount, percentage: validatedPercentage });
-                            handleFieldChange("initial");
-
-                            // Log después de setInitial para ver si se modifica el schedule
-                            setTimeout(() => {
-                            }, 100);
-                          })}
-                        onChange={(e) => {
-                          handleDecimalInput(e.target.value, 'initial-percentage-directo', (percentage) => {
-                            const validatedPercentage = validatePercentage(percentage);
-                            const amount =
-                              (validatedPercentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setInitial({ amount, percentage: validatedPercentage });
-                            handleFieldChange("initial");
-
-                            // Log después de setInitial para ver si se modifica el schedule
-                            setTimeout(() => {
-                            }, 100);
-                          });
-                        }}
-                      />
                     </div>
-                  </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Número de Cuotas</label>
-                    <div className="input-group">
-                      <div className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          className="checkbox"
-                          checked={equivalentInstallments}
-                          onChange={(e) => {
-                            setEquivalentInstallments(e.target.checked);
-                            setNeedsUpdate(true);
-                          }}
-                        />
-                        <span>Cuotas Equivalentes</span>
-                      </div>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="2 cuotas"
-                          value={getFormattedValue(numberOfInstallments, 'cuotas', 'number-of-installments')}
-                          onFocus={() => handleInputFocus('number-of-installments')}
-                          onBlur={() => handleInputBlur('number-of-installments')}
-                        onChange={(e) => {
-                          const value =
-                            parseInt(e.target.value.replace(/[^0-9]/g, "")) ||
-                            0;
-                          setNumberOfInstallments(value);
-                            setNeedsUpdate(true);
-                          }}
-                        />
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Primer y Último Pago</label>
-                    <div className="input-group">
-                      <input
-                        type="date"
-                        className={`date-input ${dateError ? "error" : ""}`}
-                        placeholder="dd/mm/aaaa"
-                        value={toDateInputValue(firstPaymentDate)}
-                        onChange={(e) => handleDateChange(fromDateInputValue(e.target.value))}
-                        onBlur={(e) => handleDateBlur(fromDateInputValue(e.target.value))}
-                      />
-                      <input
-                        type="date"
-                        className="date-input readonly"
-                        placeholder="dd/mm/aaaa"
-                        value={toDateInputValue(calculatedFinalDate)}
-                        readOnly
-                      />
-                    </div>
-                    {dateError && (
-                      <div className="date-error-message">{dateError}</div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {paymentMethod === "contado" && (
-                <>
-                  <div className="form-group">
-                    <label className="form-label">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={separation.enabled}
-                        onChange={(e) => {
-                          setSeparation({
-                            ...separation,
-                            enabled: e.target.checked,
-                          });
-                          setNeedsUpdate(true);
-                        }}
-                      />
-                      Separación
-                    </label>
-                    {separation.enabled && (
+                    <div className="form-group">
+                      <label className="form-label">Cuota Inicial</label>
                       <div className="input-group">
                         <input
                           type="text"
                           className="form-input"
-                          placeholder="0.00 USD"
-                          value={getFormattedValue(separation.amount, 'usd', 'separation-amount-contado')}
-                          onFocus={() => handleInputFocus('separation-amount-contado')}
-                          onBlur={() => handleInputBlur('separation-amount-contado')}
+                          value={getFormattedValue(initial.amount, 'usd', 'initial-amount-directo')}
+                          onFocus={() => handleInputFocus('initial-amount-directo')}
+                          onBlur={() => handleDecimalBlur('initial-amount-directo', (amount) => {
+                            const percentage = (amount / ((loteData?.precio || 0) - discountAmount)) * 100;
+                            setInitial({ amount, percentage });
+                            setNeedsUpdate(true);
+                          })}
                           onChange={(e) => {
-                            const amount =
-                              parseFloat(
-                                e.target.value.replace(/[^0-9.-]/g, "")
-                              ) || 0;
-                            const percentage =
-                              (amount /
-                                ((loteData?.precio || 445000) -
-                                  discountAmount)) *
-                              100;
-                            setSeparation({
-                              amount,
-                              percentage,
-                              enabled: true,
+                            handleDecimalInput(e.target.value, 'initial-amount-directo', (amount) => {
+                              setInitial({ ...initial, amount });
+                              setNeedsUpdate(true);
                             });
-                            handleFieldChange("separation");
                           }}
                         />
                         <input
                           type="text"
                           className="form-input"
-                          placeholder="0.00 %"
-                          value={getFormattedValue(separation.percentage, 'percentage', 'separation-percentage-contado')}
-                          onFocus={() => handleInputFocus('separation-percentage-contado')}
-                          onBlur={() => handleInputBlur('separation-percentage-contado')}
+                          value={getFormattedValue(initial.percentage, 'percentage', 'initial-percentage-directo')}
+                          onFocus={() => handleInputFocus('initial-percentage-directo')}
+                          onBlur={() => handleDecimalBlur('initial-percentage-directo', (percentage) => {
+                            const amount = (percentage / 100) * ((loteData?.precio || 0) - discountAmount);
+                            setInitial({ amount, percentage });
+                            setNeedsUpdate(true);
+                          })}
                           onChange={(e) => {
-                            const percentage = validatePercentage(
-                              parseFloat(
-                                e.target.value.replace(/[^0-9.-]/g, "")
-                              ) || 0
-                            );
-                            const amount =
-                              (percentage / 100) *
-                              ((loteData?.precio || 445000) - discountAmount);
-                            setSeparation({
-                              amount,
-                              percentage,
-                              enabled: true,
+                            handleDecimalInput(e.target.value, 'initial-percentage-directo', (percentage) => {
+                              setInitial({ ...initial, percentage });
+                              setNeedsUpdate(true);
                             });
-                            handleFieldChange("separation");
                           }}
                         />
                       </div>
-                    )}
-                  </div>
+                    </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Inicial</label>
-                    <div className="input-group">
+                    <div className="form-group">
+                      <label className="form-label">N° de Cuotas</label>
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="0.00 USD"
-                          value={getFormattedValue(initial.amount, 'usd', 'initial-amount-contado')}
-                          onFocus={() => handleInputFocus('initial-amount-contado')}
-                          onBlur={() => handleInputBlur('initial-amount-contado')}
+                        value={getFormattedValue(numberOfInstallments, 'cuotas', 'number-of-installments')}
+                        onFocus={() => handleInputFocus('number-of-installments')}
+                        onBlur={() => handleInputBlur('number-of-installments')}
                         onChange={(e) => {
-                          const amount =
-                            parseFloat(
-                              e.target.value.replace(/[^0-9.-]/g, "")
-                            ) || 0;
-                          const percentage =
-                            (amount /
-                              ((loteData?.precio || 445000) - discountAmount)) *
-                            100;
-                          setInitial({ amount, percentage });
-                          handleFieldChange("initial");
-
-                          // Log después de setInitial para ver si se modifica el schedule
-                          setTimeout(() => {
-                          }, 100);
-                        }}
-                      />
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="0.00 %"
-                          value={getFormattedValue(initial.percentage, 'percentage', 'initial-percentage-contado')}
-                          onFocus={() => handleInputFocus('initial-percentage-contado')}
-                          onBlur={() => handleInputBlur('initial-percentage-contado')}
-                        onChange={(e) => {
-                          const percentage = validatePercentage(
-                            parseFloat(
-                              e.target.value.replace(/[^0-9.-]/g, "")
-                            ) || 0
-                          );
-                          const amount =
-                            (percentage / 100) *
-                            ((loteData?.precio || 445000) - discountAmount);
-                          setInitial({ amount, percentage });
-                          handleFieldChange("initial");
-
-                          // Log después de setInitial para ver si se modifica el schedule
-                          setTimeout(() => {
-                          }, 100);
+                          const value = parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0;
+                          setNumberOfInstallments(value);
+                          setNeedsUpdate(true);
                         }}
                       />
                     </div>
-                  </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Pago Saldo Final</label>
-                    <div className="input-group">
+                    <div className="form-group">
+                      <label className="form-label">Fecha del Primer Pago</label>
                       <input
                         type="date"
-                        className="date-input"
-                        placeholder="dd/mm/aaaa"
-                        value={toDateInputValue(finalBalance.date)}
-                        onChange={(e) => {
-                          setFinalBalance({
-                            ...finalBalance,
-                            date: fromDateInputValue(e.target.value)
-                          });
-                        }}
-                        onBlur={(e) => {
-                          const formattedDate = formatDateInput(fromDateInputValue(e.target.value));
-                          setFinalBalance({
-                            ...finalBalance,
-                            date: formattedDate
-                          });
-                        }}
+                        className={`date-input ${dateError ? "error" : ""}`}
+                        value={toDateInputValue(firstPaymentDate)}
+                        onChange={(e) => handleDateChange(fromDateInputValue(e.target.value))}
                       />
-                      <div className="info-text">
-                        <small>El monto se calcula automáticamente</small>
-                      </div>
+                      {dateError && <div className="error-message">{dateError}</div>}
                     </div>
+                  </>
+                )}
+
+                {paymentMethod === "contado" && (
+                  <div className="form-group">
+                    <label className="form-label">Fecha de Pago Final</label>
+                    <input
+                      type="date"
+                      className="date-input"
+                      value={toDateInputValue(finalBalance.date)}
+                      onChange={(e) => setFinalBalance({ ...finalBalance, date: fromDateInputValue(e.target.value) })}
+                    />
                   </div>
-                </>
-              )}
+                )}
 
-              <button
-                className={`generate-schedule-btn ${
-                  needsUpdate ? "update-btn" : ""
-                }`}
-                onClick={() => {
-                  if (needsUpdate) {
-                    updateSchedule();
-                  } else {
-                    generateSchedule();
-                  }
-                }}
-                disabled={
-                  (paymentMethod !== "contado" && !firstPaymentDate) || 
-                  (paymentMethod !== "contado" && numberOfInstallments === 0) || 
-                  (paymentMethod !== "contado" && !!dateError)
-                }
-              >
-                {needsUpdate ? "Actualizar Cronograma" : "Generar Cronograma"}
-              </button>
-            </div>
-
-            {/* Tabla de Cronograma Generado */}
-            <div className="schedule-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th style={{ textAlign: "center" }}>Fecha</th>
-                    <th style={{ textAlign: "center" }}>Porcentaje</th>
-                    <th style={{ textAlign: "center" }}>Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {schedule.map((item, index) => (
-                    <tr key={index}>
-                      <td style={{ textAlign: "center" }}>{item.item}</td>
-                      <td style={{ textAlign: "center" }}>
-                        <input
-                          type="date"
-                          className="input-date"
-                          placeholder="dd/mm/aaaa"
-                          {...getDateInputMinMax(item.item)}
-                          value={toDateInputValue(item.date)}
-                          onChange={(e) => {
-                            const newSchedule = [...schedule];
-                            newSchedule[index].date = fromDateInputValue(e.target.value);
-                            // No marcar aún, solo actualizar el input y no aceptar inválidos en blur
-                            setSchedule(newSchedule);
-                          }}
-                          onBlur={(e) => {
-                            const inputValue = fromDateInputValue(e.target.value);
-                            const formattedDate = formatDateInput(inputValue);
-                            const newSchedule = [...schedule];
-                            if (formattedDate) {
-                              // Validar fecha según el tipo de item (Separación/Inicial vs Cuotas)
-                              const validation = validateScheduleDate(formattedDate, item.item);
-                              if (validation.isValid) {
-                              // Fecha válida
-                              newSchedule[index].date = formattedDate;
-                              newSchedule[index].isEditedDate = true;
-                              newSchedule[index].lastValidDate = formattedDate;
-                                
-                                // Si es la primera cuota (Cuota 1), actualizar firstPaymentDate
-                                if (item.item === "Cuota 1") {
-                                  const newFirstPaymentDate = formattedDate;
-                                  setFirstPaymentDate(newFirstPaymentDate);
-                                  
-                                  // Validar y limpiar fechas de Separación e Inicial si son inválidas
-                                  const firstPaymentParsed = parse(newFirstPaymentDate, "dd/MM/yyyy", new Date());
-                                  if (isValid(firstPaymentParsed)) {
-                                    newSchedule.forEach((scheduleItem, scheduleIndex) => {
-                                      if (scheduleItem.item === "Separación" || scheduleItem.item === "Inicial") {
-                                        if (scheduleItem.date) {
-                                          const itemDateParsed = parse(scheduleItem.date, "dd/MM/yyyy", new Date());
-                                          if (isValid(itemDateParsed)) {
-                                            // Si la fecha de Separación/Inicial es posterior o igual a la nueva fecha de primera cuota, limpiarla
-                                            if (!isBefore(itemDateParsed, firstPaymentParsed)) {
-                                              newSchedule[scheduleIndex].date = '';
-                                              newSchedule[scheduleIndex].lastValidDate = '';
-                                              newSchedule[scheduleIndex].isEditedDate = false;
-                                            }
-                                          }
-                                        }
-                                      }
-                                    });
-                                  }
-                                  
-                                  // Recalcular fecha final si aplica
-                                  if (paymentMethod === "credito_directo" && numberOfInstallments > 0) {
-                                    const finalDate = calculateFinalPaymentDate(
-                                      newFirstPaymentDate,
-                                      numberOfInstallments
-                                    );
-                                    setCalculatedFinalDate(finalDate);
-                                  }
-                                }
-                              } else {
-                                // Fecha inválida: restaurar último válido (si existe) o vacío
-                                const fallback = newSchedule[index].lastValidDate || '';
-                                newSchedule[index].date = fallback;
-                                // Opcional: mostrar error (puedes agregar un estado de error si lo necesitas)
-                                if (validation.error) {
-                                  console.warn(`Error en fecha de ${item.item}: ${validation.error}`);
-                                }
-                              }
-                            } else {
-                              // Fecha inválida: restaurar último válido (si existe) o vacío
-                              const fallback = newSchedule[index].lastValidDate || '';
-                              newSchedule[index].date = fallback;
-                            }
-                            setSchedule(newSchedule);
-                          }}
-                        />
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <input
-                          type="text"
-                          className={`input-percent ${
-                            item.isEquivalent && /^Cuota\s/.test(item.item) ? "readonly" : ""
-                          }`}
-                          value={getFormattedValue(
-                            item.percentage,
-                            'percentage',
-                            `schedule-percentage-${index}`
-                          )}
-                          readOnly={item.isEquivalent && /^Cuota\s/.test(item.item)}
-                          onChange={(e) => {
-                            if (!item.isEquivalent) {
-                              handleDecimalInput(e.target.value, `schedule-percentage-${index}`, (percentage) => {
-                                const validatedPercentage = validatePercentage(percentage);
-                                handleInstallmentChange(
-                                  index,
-                                  "percentage",
-                                  validatedPercentage
-                                );
-                              });
-                            }
-                          }}
-                          onFocus={() => handleInputFocus(`schedule-percentage-${index}`)}
-                          onBlur={() => {
-                            if (!item.isEquivalent) {
-                              handleDecimalBlur(`schedule-percentage-${index}`, (percentage) => {
-                                const validatedPercentage = validatePercentage(percentage);
-                                handleInstallmentChange(
-                                  index,
-                                  "percentage",
-                                  validatedPercentage
-                                );
-                              });
-                            } else {
-                              handleInputBlur(`schedule-percentage-${index}`);
-                            }
-                          }}
-                        />
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <input
-                          type="text"
-                          className={`input-amount ${
-                            item.isEquivalent && /^Cuota\s/.test(item.item) ? "readonly" : ""
-                          }`}
-                          value={getFormattedValue(
-                            item.amount,
-                            'usd',
-                            `schedule-amount-${index}`
-                          )}
-                          readOnly={item.isEquivalent && /^Cuota\s/.test(item.item)}
-                          onChange={(e) => {
-                            if (!item.isEquivalent) {
-                              handleDecimalInput(e.target.value, `schedule-amount-${index}`, (amount) => {
-                                handleInstallmentChange(index, "amount", amount);
-                              });
-                            }
-                          }}
-                          onFocus={() => handleInputFocus(`schedule-amount-${index}`)}
-                          onBlur={() => {
-                            if (!item.isEquivalent) {
-                              handleDecimalBlur(`schedule-amount-${index}`, (amount) => {
-                                handleInstallmentChange(index, "amount", amount);
-                              });
-                            } else {
-                              handleInputBlur(`schedule-amount-${index}`);
-                            }
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-
-                  {mortgageCredit.amount > 0 && (
-                    <tr>
-                      <td className="muted">Desembolso CH</td>
-                      <td style={{ textAlign: "center" }}>
-                        <input
-                          type="date"
-                          className="input-date muted"
-                          placeholder="dd/mm/aaaa"
-                          readOnly
-                        />
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <input
-                          type="text"
-                          className="input-percent muted"
-                          value={`${mortgageCredit.percentage.toFixed(2)}%`}
-                          readOnly
-                        />
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <input
-                          type="text"
-                          className="input-amount muted"
-                          value={`${mortgageCredit.amount.toLocaleString()} USD`}
-                          readOnly
-                        />
-                      </td>
-                    </tr>
-                  )}
-
-                  <tr className="total-row" style={{ borderTop: "1px solid #333" }}>
-                    <td colSpan={2}>
-                      <strong>TOTAL</strong>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <strong>100%</strong>
-                    </td>
-                    <td style={{ textAlign: "right", color: "#10b981"}}>
-                      <strong>
-                        $
-                        {(
-                          (loteData?.precio || 445000) - discountAmount
-                        ).toLocaleString()}{" "}
-                        USD
-                      </strong>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Funcionalidades */}
-            <div className="functionalities">
-              <div className="function-buttons">
-                <button className="function-btn print" onClick={handlePrint} disabled={!functionalitiesEnabled}> <i className="fas fa-print"></i> Imprimir</button>
-                <button className="function-btn save" onClick={handleSave} disabled={!functionalitiesEnabled}> <i className="fas fa-save"></i> Guardar</button>
-                <button className="function-btn email" onClick={handleEmail} disabled={!functionalitiesEnabled}> <i className="fas fa-envelope"></i> Enviar</button>
+                <button
+                  className="generate-schedule-btn"
+                  onClick={needsUpdate ? updateSchedule : generateSchedule}
+                  disabled={(paymentMethod !== "contado" && (!firstPaymentDate || numberOfInstallments === 0)) || !!dateError}
+                >
+                  {needsUpdate ? "Actualizar Cronograma" : "Generar Cronograma"}
+                </button>
               </div>
+            </div>
+
+            {schedule.length > 0 && (
+              <div className="schedule-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Fecha</th>
+                      <th>%</th>
+                      <th style={{ textAlign: 'right' }}>Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedule.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.item}</td>
+                        <td>{item.date}</td>
+                        <td>{item.percentage.toFixed(1)}%</td>
+                        <td style={{ textAlign: 'right' }}>${item.amount.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="function-buttons">
+              <button className="function-btn" onClick={handlePrint} disabled={!functionalitiesEnabled}>
+                <span className="material-symbols-outlined">print</span>
+                Imprimir
+              </button>
+              <button className="function-btn" onClick={handleSave} disabled={!functionalitiesEnabled}>
+                <span className="material-symbols-outlined">save</span>
+                Guardar
+              </button>
+              <button className="function-btn" onClick={handleEmail} disabled={!functionalitiesEnabled}>
+                <span className="material-symbols-outlined">mail</span>
+                Enviar
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Contact Modal */}
       <ContactModal
         isVisible={showContactModal}
         type={modalType}
@@ -4280,13 +3393,10 @@ const LotInfoModal = ({
         quotationCode={quotationCodeForModal}
       />
 
-      {/* Toast Message */}
       {toastMessage && (
         <div className="lot-toast-message">
-          <div className="lot-toast-content">
-            <i className="fas fa-exclamation-triangle"></i>
-            <span>{toastMessage}</span>
-          </div>
+          <span className="material-symbols-outlined">warning</span>
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

@@ -31,14 +31,14 @@ const UserInfoModal = ({ isVisible, user, onClose, onLogout }: UserInfoModalProp
         <div className="user-info-modal-header">
           <h2 className="user-info-modal-title">Información del Usuario</h2>
           <button className="user-info-modal-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         <div className="user-info-modal-content">
           <div className="user-info-section">
             <div className="user-info-avatar">
-              <i className="fas fa-user-circle"></i>
+              <span className="material-symbols-outlined">account_circle</span>
             </div>
             <div className="user-info-details">
               <div className="user-info-field">
@@ -54,7 +54,7 @@ const UserInfoModal = ({ isVisible, user, onClose, onLogout }: UserInfoModalProp
               <div className="user-info-field">
                 <label>Estado:</label>
                 <span className="status-active">
-                  <i className="fas fa-circle"></i>
+                  <span className="material-symbols-outlined status-dot">circle</span>
                   Activo
                 </span>
               </div>
@@ -66,11 +66,11 @@ const UserInfoModal = ({ isVisible, user, onClose, onLogout }: UserInfoModalProp
               className="btn-dashboard" 
               onClick={handleGoToDashboard}
             >
-              <i className="fas fa-tachometer-alt"></i>
+               <span className="material-symbols-outlined">dashboard</span>
               Ir al Dashboard
             </button>
             <button className="btn-logout" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt"></i>
+               <span className="material-symbols-outlined">logout</span>
               Cerrar Sesión
             </button>
           </div>

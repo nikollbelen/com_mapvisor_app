@@ -106,23 +106,22 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
     <div className="login-modal-overlay">
       <div className="login-modal">
         <button className="login-modal-close" onClick={onClose}>
-          <i className="fas fa-times"></i>
+          <span className="material-symbols-outlined">close</span>
         </button>
 
         <div className="login-hero">
-          <img
-            className="login-logo"
-            src="/images/init/init-smallicon.svg"
-            alt="logo"
-          />
+          <div className="login-logo-container">
+            <span className="material-symbols-outlined login-logo-icon">domain</span>
+          </div>
           {!showForgot ? (
             <>
-              <h1 className="login-title">Bienvenido a Reveal</h1>
+              <h1 className="login-title">Bienvenido a Lomas de Jesús</h1>
               <p className="login-subtitle">El visor inmersivo que conecta tus proyectos con la realidad</p>
             </>
           ) : (
             <>
-              <p className="login-subtitle forgot-desc">Ingresa tu correo electrónico enlazado a tu usuario y te enviaremos un link para reiniciar tu contraseña</p>
+              <h1 className="login-title">Recuperar Acceso</h1>
+              <p className="login-subtitle forgot-desc">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña</p>
             </>
           )}
         </div>
@@ -131,12 +130,12 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
           {!showForgot ? (
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="input-group">
-                <label className="form-label" htmlFor="email">Usuario</label>
+                <label className="form-label" htmlFor="email">Usuario / Email</label>
                 <input
                   id="email"
                   type="email"
                   className={`form-input ${errors.email ? 'error' : ''}`}
-                  placeholder="Campo de entrada"
+                  placeholder="ejemplo@correo.com"
                   value={credentials.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={isLoading}
@@ -149,7 +148,7 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     className={`form-input ${errors.password ? 'error' : ''}`}
-                    placeholder="Campo de entrada"
+                    placeholder="••••••••"
                     value={credentials.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     disabled={isLoading}
@@ -161,7 +160,9 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
                     disabled={isLoading}
                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
-                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                    <span className="material-symbols-outlined">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
                   </button>
                 </div>
                 {errors.password && <div className="error-message">{errors.password}</div>}
@@ -183,7 +184,7 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
 
               {errors.login && (
                 <div className="login-error">
-                  <i className="fas fa-exclamation-triangle"></i>
+                  <span className="material-symbols-outlined">warning</span>
                   {errors.login}
                 </div>
               )}
@@ -191,10 +192,10 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
               <div className="login-actions">
                 <button 
                   type="submit"
-                  className="btn-primary btn-submit" 
+                  className="btn-submit" 
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Ingresando…' : 'Ingresar'}
+                  {isLoading ? 'INGRESANDO...' : 'INGRESAR'}
                 </button>
               </div>
             </form>
@@ -206,7 +207,7 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
                   id="recover-email"
                   type="email"
                   className="form-input"
-                  placeholder="Campo de entrada"
+                  placeholder="tu@correo.com"
                   value={credentials.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={isLoading}
@@ -214,14 +215,14 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
               </div>
 
               <div className="login-actions">
-                <button type="submit" className="btn-primary btn-submit" disabled={isLoading}>
-                  Enviar link
+                <button type="submit" className="btn-submit" disabled={isLoading}>
+                  ENVIAR ENLACE
                 </button>
               </div>
 
-              <div className="login-row" style={{ marginTop: 16 }}>
+              <div className="login-row" style={{ marginTop: 16, justifyContent: 'center' }}>
                 <button type="button" className="forgot" onClick={() => setShowForgot(false)}>
-                  Volver a iniciar sesión
+                  Volver al inicio de sesión
                 </button>
               </div>
             </form>
