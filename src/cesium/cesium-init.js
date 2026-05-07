@@ -1310,8 +1310,8 @@ function hoverMarcadores() {
 // Sidebar
 
 function reiniciarMenu() {
-  // Ocultar etiquetas de lotes por defecto al cambiar de modo
-  window.showLoteLabels = false;
+  // Mostrar etiquetas de lotes por defecto al reiniciar (vista estándar)
+  window.showLoteLabels = true;
 
   // Remove active classes from all sidebar buttons
   const fotosBtn = document.getElementById("fotos");
@@ -1388,6 +1388,8 @@ function reiniciarMenu() {
 
 async function handleFotos() {
   reiniciarMenu();
+  // Ocultar etiquetas de lotes en este modo
+  window.showLoteLabels = false;
 
   // Activate photos button
   const fotosBtn = document.getElementById("fotos");
@@ -1496,6 +1498,8 @@ function closeOverlay360() {
 
 async function handleAreasComunes() {
   reiniciarMenu();
+  // Ocultar etiquetas de lotes en este modo
+  window.showLoteLabels = false;
 
   // Activate areas button
   const areasBtn = document.getElementById("areas");
@@ -1950,6 +1954,8 @@ function loadLotData() {
 
 async function handleEntorno() {
   reiniciarMenu();
+  // Ocultar etiquetas de lotes en este modo
+  window.showLoteLabels = false;
 
   // Activate environment button
   const entornoBtn = document.getElementById("entorno");
@@ -2328,6 +2334,9 @@ function closeVideoOverlay() {
   if (videoBtn) {
     videoBtn.classList.remove("active");
   }
+
+  // Dispatch event to reset sidebar state in React
+  window.dispatchEvent(new CustomEvent("reiniciarMenu"));
 }
 
 // Función para seleccionar un lote por entidad (usada desde URL highlight)
