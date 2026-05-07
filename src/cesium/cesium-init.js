@@ -494,14 +494,11 @@ async function loadLotesData() {
         if (entity.id.startsWith("marcador_foto_") || entity.id.startsWith("area_comun_")) {
           if (distance > MARKER_SHOW_DISTANCE) {
             entity.billboard.show = false;
+            if (entity.label) entity.label.show = false;
           } else {
-            // Common areas are only visible when close (< 550m)
-            if (entity.id.startsWith("area_comun_")) {
-              entity.billboard.show = distance < MAX_DISTANCE;
-            } else {
-              // Photo markers are visible if Mykonos is not
-              entity.billboard.show = true;
-            }
+            // Visible as long as Mykonos is not
+            entity.billboard.show = true;
+            if (entity.label) entity.label.show = true;
           }
         } 
         // Other markers (except environment and Mykonos)
@@ -511,8 +508,6 @@ async function loadLotesData() {
         ) {
           // Show markers when you are less than 550m away
           entity.billboard.show = distance < MAX_DISTANCE;
-
-          // Also control labels if they exist
           if (entity.label) {
             entity.label.show = distance < MAX_DISTANCE;
           }

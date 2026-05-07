@@ -11,8 +11,8 @@
       "properties": {
         "fid": 1,
         "name": "Pórtico de ingreso",
-        "marker": "images/sidebar/areas/markers/portico.png",
-        "image": "images/sidebar/areas/images/portico.png"
+        "marker": "/images/sidebar/areas/markers/portico.png",
+        "image": "/images/sidebar/areas/images/portico.png"
       },
       "geometry": {
         "type": "Point",
@@ -24,8 +24,8 @@
       "properties": {
         "fid": 2,
         "name": "Parque",
-        "marker": "images/sidebar/areas/markers/parque.png",
-        "image": "images/sidebar/areas/images/parque.png"
+        "marker": "/images/sidebar/areas/markers/parque.png",
+        "image": "/images/sidebar/areas/images/parque.png"
       },
       "geometry": {
         "type": "Point",
@@ -37,8 +37,8 @@
       "properties": {
         "fid": 3,
         "name": "Club House",
-        "marker": "images/sidebar/areas/markers/club.png",
-        "image": "images/sidebar/areas/images/club.png"
+        "marker": "/images/sidebar/areas/markers/club.png",
+        "image": "/images/sidebar/areas/images/club.png"
       },
       "geometry": {
         "type": "Point",
