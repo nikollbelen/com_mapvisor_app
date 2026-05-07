@@ -63,27 +63,29 @@ const TimeOfDayControl = ({ isVisible = false }: TimeOfDayControlProps) => {
   if (!isExpanded) {
     return (
       <button
-        className="time-of-day-toggle-btn"
+        className={`time-of-day-toggle-btn hud-glass-panel ${isMobile ? 'hud-gold-edge' : 'hud-glass-glow-top shadow-lg'}`}
         onClick={() => setIsExpanded(true)}
         aria-label="Mostrar control de hora del día"
       >
-        <span className="sun-icon">☀️</span>
+        <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+          {isMobile ? 'wb_sunny' : 'light_mode'}
+        </span>
       </button>
     );
   }
 
   // Si está expandido, mostrar el panel completo
   return (
-    <div className={`time-of-day-control ${isMobile ? 'mobile' : ''}`}>
+    <div className={`time-of-day-control hud-glass-panel hud-glass-glow-top ${isMobile ? 'mobile' : ''}`}>
       <div className="time-of-day-header">
-        <span className="time-of-day-icon">☀️</span>
+        <span className="material-symbols-outlined" style={{ color: '#e9c176', fontVariationSettings: "'FILL' 1" }}>wb_sunny</span>
         <span className="time-of-day-title">Hora del Día</span>
         <button
           className="time-of-day-close-btn"
           onClick={() => setIsExpanded(false)}
           aria-label="Cerrar control de hora del día"
         >
-          ✕
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
         </button>
       </div>
       
@@ -125,4 +127,3 @@ const TimeOfDayControl = ({ isVisible = false }: TimeOfDayControlProps) => {
 };
 
 export default TimeOfDayControl;
-

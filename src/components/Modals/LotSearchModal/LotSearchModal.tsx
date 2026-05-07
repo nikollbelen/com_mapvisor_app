@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './LotSearchModal.css';
 
 interface LotSearchModalProps {
@@ -9,33 +9,48 @@ interface LotSearchModalProps {
 const DEFAULT_PRICE_BOUNDS = { min: 0, max: 100000 };
 const DEFAULT_AREA_BOUNDS = { min: 90, max: 1000 };
 
+const SORT_OPTIONS = [
+  { value: 'area-asc',    label: 'Área: de menor a mayor' },
+  { value: 'area-desc',   label: 'Área: de mayor a menor' },
+  { value: 'price-asc',   label: 'Precio: de menor a mayor' },
+  { value: 'price-desc',  label: 'Precio: de mayor a menor' },
+  { value: 'number-asc',  label: 'Número: de menor a mayor' },
+  { value: 'number-desc', label: 'Número: de mayor a menor' },
+];
+
 const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => {
   const [priceMin, setPriceMin] = useState(DEFAULT_PRICE_BOUNDS.min);
-  const [priceMax, setPriceMax] = useState(DEFAULT_PRICE_BOUNDS.max); // Valor inicial más alto
+  const [priceMax, setPriceMax] = useState(DEFAULT_PRICE_BOUNDS.max);
   const [areaMin, setAreaMin] = useState(DEFAULT_AREA_BOUNDS.min);
-  const [areaMax, setAreaMax] = useState(DEFAULT_AREA_BOUNDS.max); // Valor inicial más alto
+  const [areaMax, setAreaMax] = useState(DEFAULT_AREA_BOUNDS.max);
   const [priceBounds, setPriceBounds] = useState(DEFAULT_PRICE_BOUNDS);
   const [areaBounds, setAreaBounds] = useState(DEFAULT_AREA_BOUNDS);
   const [sortBy, setSortBy] = useState('area-asc');
+  const [sortOpen, setSortOpen] = useState(false);
   const [status, setStatus] = useState('disponible');
   const [isMobile, setIsMobile] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
 
-  // Detectar si es móvil o tablet
+  // Close dropdown on outside click
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth <= 1024);
+    const handler = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
     };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
+  useEffect(() => {
+    const checkScreenSize = () => setIsMobile(window.innerWidth <= 1024);
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Obtener configuración de lotes cada vez que se abre el modal
   useEffect(() => {
     if (!isVisible) return;
-
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     const projectId = import.meta.env.VITE_PROJECT_ID;
     if (!apiBaseUrl || !projectId) return;
@@ -43,445 +58,239 @@ const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => 
     const controller = new AbortController();
     const fetchLotConfig = async () => {
       try {
-        const response = await fetch(
-          `${apiBaseUrl}/lots/project/${projectId}/config`,
-          {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'ngrok-skip-browser-warning': 'true',
-            },
-            signal: controller.signal,
-          }
-        );
-
-        if (!response.ok) {
-          console.error('No se pudo obtener la configuración de lotes', response.status);
-          return;
-        }
-
+        const response = await fetch(`${apiBaseUrl}/lots/project/${projectId}/config`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
         const json = await response.json();
         const config = json?.data;
         if (!config) return;
 
-        console.info('[LotSearchModal] Configuración de lotes recibida:', {
-          max_price: config.max_price,
-          min_price: config.min_price,
-          max_area: config.max_area,
-          min_area: config.min_area,
-        });
-
         const parseNumber = (value: unknown) => {
           if (typeof value === 'number') return value;
-          if (typeof value === 'string') {
-            const parsed = parseFloat(value);
-            return isNaN(parsed) ? undefined : parsed;
-          }
+          if (typeof value === 'string') { const p = parseFloat(value); return isNaN(p) ? undefined : p; }
           return undefined;
         };
 
-        const maxPriceFromConfig = parseNumber(config.max_price);
-        const minPriceFromConfig = parseNumber(config.min_price);
-        const maxAreaFromConfig = parseNumber(config.max_area);
-        const minAreaFromConfig = parseNumber(config.min_area);
-
-        const normalizedPriceBounds = {
-          min: minPriceFromConfig !== undefined
-            ? Math.max(0, Math.floor(minPriceFromConfig))
-            : DEFAULT_PRICE_BOUNDS.min,
-          max: maxPriceFromConfig !== undefined
-            ? Math.max(0, Math.ceil(maxPriceFromConfig))
-            : DEFAULT_PRICE_BOUNDS.max,
+        const nb = {
+          min: parseNumber(config.min_price) !== undefined ? Math.max(0, Math.floor(parseNumber(config.min_price)!)) : DEFAULT_PRICE_BOUNDS.min,
+          max: parseNumber(config.max_price) !== undefined ? Math.max(0, Math.ceil(parseNumber(config.max_price)!)) : DEFAULT_PRICE_BOUNDS.max,
         };
-        if (normalizedPriceBounds.min > normalizedPriceBounds.max) {
-          normalizedPriceBounds.min = normalizedPriceBounds.max;
-        }
-
-        const normalizedAreaBounds = {
-          min: minAreaFromConfig !== undefined
-            ? Math.max(0, Math.floor(minAreaFromConfig))
-            : DEFAULT_AREA_BOUNDS.min,
-          max: maxAreaFromConfig !== undefined
-            ? Math.max(0, Math.ceil(maxAreaFromConfig))
-            : DEFAULT_AREA_BOUNDS.max,
+        const ab = {
+          min: parseNumber(config.min_area) !== undefined ? Math.max(0, Math.floor(parseNumber(config.min_area)!)) : DEFAULT_AREA_BOUNDS.min,
+          max: parseNumber(config.max_area) !== undefined ? Math.max(0, Math.ceil(parseNumber(config.max_area)!)) : DEFAULT_AREA_BOUNDS.max,
         };
-        if (normalizedAreaBounds.min > normalizedAreaBounds.max) {
-          normalizedAreaBounds.min = normalizedAreaBounds.max;
-        }
 
-        setPriceBounds(normalizedPriceBounds);
-        setAreaBounds(normalizedAreaBounds);
-        setPriceMin(normalizedPriceBounds.min);
-        setPriceMax(normalizedPriceBounds.max);
-        setAreaMin(normalizedAreaBounds.min);
-        setAreaMax(normalizedAreaBounds.max);
+        setPriceBounds(nb); setAreaBounds(ab);
+        setPriceMin(nb.min); setPriceMax(nb.max);
+        setAreaMin(ab.min); setAreaMax(ab.max);
 
         if (window.setLotRangeConfig) {
-          window.setLotRangeConfig({
-            maxPrice: normalizedPriceBounds.max,
-            minPrice: normalizedPriceBounds.min,
-            maxArea: normalizedAreaBounds.max,
-            minArea: normalizedAreaBounds.min,
-          });
+          window.setLotRangeConfig({ maxPrice: nb.max, minPrice: nb.min, maxArea: ab.max, minArea: ab.min });
         }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return;
-        }
-        console.error('No se pudo obtener la configuración de lotes', error);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        console.error('Error fetching lot config', e);
       }
     };
-
     fetchLotConfig();
     return () => controller.abort();
   }, [isVisible]);
 
-  // Función para actualizar la barra visual del slider
   const clampToBounds = (value: number, bounds: { min: number; max: number }) => {
     if (Number.isNaN(value)) return bounds.min;
     return Math.max(bounds.min, Math.min(value, bounds.max));
   };
 
   const updateRangeSlider = (
-    minInput: number,
-    maxInput: number,
-    minOutput: string,
-    maxOutput: string,
-    inclRange: string,
-    formatValue: (value: number) => string,
-    rangeBounds: { min: number; max: number }
+    minInput: number, maxInput: number,
+    minOutput: string, maxOutput: string, inclRange: string,
+    formatValue: (v: number) => string, rangeBounds: { min: number; max: number }
   ) => {
-    const minValue = minInput;
-    const maxValue = maxInput;
-    
     const minRange = rangeBounds?.min ?? 0;
     const maxRangeRaw = rangeBounds?.max ?? minRange + 1;
     const maxRange = maxRangeRaw > minRange ? maxRangeRaw : minRange + 1;
     const rangeSpan = maxRange - minRange;
-
-    // Actualizar outputs (solo contenido, no posición)
-    const minOutputEl = document.querySelector(minOutput);
-    const maxOutputEl = document.querySelector(maxOutput);
-    if (minOutputEl) minOutputEl.innerHTML = formatValue(minValue);
-    if (maxOutputEl) maxOutputEl.innerHTML = formatValue(maxValue);
-
-    // Actualizar rango incluido
-    const inclRangeEl = document.querySelector(inclRange) as HTMLElement;
-    if (inclRangeEl) {
-      const effectiveMin = Math.min(minValue, maxValue);
-      const effectiveMax = Math.max(minValue, maxValue);
-      inclRangeEl.style.width = ((effectiveMax - effectiveMin) / rangeSpan) * 100 + "%";
-      inclRangeEl.style.left = ((effectiveMin - minRange) / rangeSpan) * 100 + "%";
+    const minEl = document.querySelector(minOutput);
+    const maxEl = document.querySelector(maxOutput);
+    if (minEl) minEl.innerHTML = formatValue(minInput);
+    if (maxEl) maxEl.innerHTML = formatValue(maxInput);
+    const inclEl = document.querySelector(inclRange) as HTMLElement;
+    if (inclEl) {
+      const eMin = Math.min(minInput, maxInput);
+      const eMax = Math.max(minInput, maxInput);
+      inclEl.style.width = ((eMax - eMin) / rangeSpan) * 100 + '%';
+      inclEl.style.left = ((eMin - minRange) / rangeSpan) * 100 + '%';
     }
   };
 
-  // Efecto para actualizar los sliders cuando cambien los valores máximos
   useEffect(() => {
-    if (isVisible && window.loadLotData) {
-      // Pequeño delay para asegurar que los sliders estén renderizados
-      setTimeout(() => {
-        window.loadLotData();
-      }, 100);
-    }
+    if (isVisible && window.loadLotData) setTimeout(() => window.loadLotData(), 100);
   }, [isVisible, priceMax, areaMax]);
 
-  // Efecto para actualizar las barras visuales cuando cambien los valores
   useEffect(() => {
     if (isVisible) {
-      // Actualizar barra de precio
-      updateRangeSlider(
-        priceMin,
-        priceMax,
-        ".price-output-min",
-        ".price-output-max",
-        ".price-range-slider .incl-range",
-        (value) => `$${parseInt(value.toString()).toLocaleString()}`,
-        priceBounds
-      );
-
-      // Actualizar barra de área
-      updateRangeSlider(
-        areaMin,
-        areaMax,
-        ".area-output-min",
-        ".area-output-max",
-        ".area-range-slider .incl-range",
-        (value) => `${parseInt(value.toString())} m²`,
-        areaBounds
-      );
+      updateRangeSlider(priceMin, priceMax, '.price-output-min', '.price-output-max', '.price-range-slider .incl-range', (v) => `$${parseInt(v.toString()).toLocaleString()}`, priceBounds);
+      updateRangeSlider(areaMin, areaMax, '.area-output-min', '.area-output-max', '.area-range-slider .incl-range', (v) => `${parseInt(v.toString())} m²`, areaBounds);
     }
   }, [isVisible, priceMin, priceMax, areaMin, areaMax, priceBounds, areaBounds]);
 
-  const handleClose = () => {
-    onClose?.();
-  };
+  const handleClose = () => onClose?.();
 
   const handleClearFilters = () => {
-    // Usar valores mínimos reales si están disponibles
-    const minPrice = priceBounds.min;
-    const minArea = areaBounds.min;
-    const maxPrice = priceBounds.max;
-    const maxArea = areaBounds.max;
-    
-    setPriceMin(minPrice);
-    setPriceMax(maxPrice);
-    setAreaMin(Math.ceil(minArea));
-    setAreaMax(Math.ceil(maxArea));
-    setSortBy('area-asc');
-    setStatus('disponible');
-    
-    // Llamar a la función de Cesium para actualizar los datos
-    if (window.loadLotData) {
-      window.loadLotData();
-    }
+    setPriceMin(priceBounds.min); setPriceMax(priceBounds.max);
+    setAreaMin(areaBounds.min); setAreaMax(areaBounds.max);
+    setSortBy('area-asc'); setStatus('disponible');
+    if (window.loadLotData) window.loadLotData();
   };
 
   const handlePriceMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = parseInt(e.target.value);
-    const value = clampToBounds(rawValue, priceBounds);
-    setPriceMin(value);
-    // Actualizar barra visual inmediatamente
-    updateRangeSlider(
-      value,
-      priceMax,
-      ".price-output-min",
-      ".price-output-max",
-      ".price-range-slider .incl-range",
-      (val) => `$${parseInt(val.toString()).toLocaleString()}`,
-      priceBounds
-    );
-    // Llamar a la función de Cesium para actualizar los datos
-    if (window.loadLotData) {
-      window.loadLotData();
-    }
+    const v = clampToBounds(parseInt(e.target.value), priceBounds);
+    setPriceMin(v);
+    if (window.loadLotData) window.loadLotData();
   };
-
   const handlePriceMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = parseInt(e.target.value);
-    const value = clampToBounds(rawValue, priceBounds);
-    setPriceMax(value);
-    // Actualizar barra visual inmediatamente
-    updateRangeSlider(
-      priceMin,
-      value,
-      ".price-output-min",
-      ".price-output-max",
-      ".price-range-slider .incl-range",
-      (val) => `$${parseInt(val.toString()).toLocaleString()}`,
-      priceBounds
-    );
-    // Llamar a la función de Cesium para actualizar los datos
-    if (window.loadLotData) {
-      window.loadLotData();
-    }
+    const v = clampToBounds(parseInt(e.target.value), priceBounds);
+    setPriceMax(v);
+    if (window.loadLotData) window.loadLotData();
   };
-
   const handleAreaMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = parseInt(e.target.value);
-    const value = clampToBounds(rawValue, areaBounds);
-    setAreaMin(value);
-    // Actualizar barra visual inmediatamente
-    updateRangeSlider(
-      value,
-      areaMax,
-      ".area-output-min",
-      ".area-output-max",
-      ".area-range-slider .incl-range",
-      (val) => `${parseInt(val.toString())} m²`,
-      areaBounds
-    );
-    // Llamar a la función de Cesium para actualizar los datos
-    if (window.loadLotData) {
-      window.loadLotData();
-    }
+    const v = clampToBounds(parseInt(e.target.value), areaBounds);
+    setAreaMin(v);
+    if (window.loadLotData) window.loadLotData();
   };
-
   const handleAreaMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = parseInt(e.target.value);
-    const value = clampToBounds(rawValue, areaBounds);
-    setAreaMax(value);
-    // Actualizar barra visual inmediatamente
-    updateRangeSlider(
-      areaMin,
-      value,
-      ".area-output-min",
-      ".area-output-max",
-      ".area-range-slider .incl-range",
-      (val) => `${parseInt(val.toString())} m²`,
-      areaBounds
-    );
-    // Llamar a la función de Cesium para actualizar los datos
-    if (window.loadLotData) {
-      window.loadLotData();
-    }
+    const v = clampToBounds(parseInt(e.target.value), areaBounds);
+    setAreaMax(v);
+    if (window.loadLotData) window.loadLotData();
   };
 
   const handleStatusChange = (newStatus: string) => {
     setStatus(newStatus);
-    
-    // Forzar re-render inmediato de los botones
-    setTimeout(() => {
-      // Llamar a la función de Cesium para actualizar los datos
-      if (window.loadLotData) {
-        window.loadLotData();
-      }
-    }, 0);
+    setTimeout(() => { if (window.loadLotData) window.loadLotData(); }, 0);
   };
 
-  // No renderizar si no es visible
+  const handleSortSelect = (value: string) => {
+    setSortBy(value);
+    setSortOpen(false);
+    // Sync hidden select for Cesium's applyFilters
+    const sel = document.getElementById('sortSelect') as HTMLSelectElement;
+    if (sel) sel.value = value;
+    if (window.loadLotData) window.loadLotData();
+  };
+
+  const sortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label ?? '';
+
   if (!isVisible) return null;
 
   return (
-    <div className={`lot-search-modal background-container border-container ${isMobile ? 'mobile-modal' : ''}`} id="lotSearchModalOverlay">
-      <button className="close-btn" id="closeLotSearchModal" onClick={handleClose}>
-        <i className="fas fa-times"></i>
+    <div
+      className={`lot-search-modal hud-glass-panel hud-gold-edge ${isMobile ? 'mobile-modal' : ''}`}
+      id="lotSearchModalOverlay"
+    >
+      {/* Hidden native select so Cesium's applyFilters can read it */}
+      <select id="sortSelect" value={sortBy} onChange={() => {}} style={{ display: 'none' }}>
+        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+
+      <button className="lot-search-close-btn" id="closeLotSearchModal" onClick={handleClose}>
+        <span className="material-symbols-outlined">close</span>
       </button>
-      
+
+      {/* Header */}
       <div className="lot-search-header">
         <div className="lot-search-title">
-          <img src="/images/sidebar/lotes/busqueda_lotes.svg" alt="Búsqueda de lotes" className="lot-search-icon" />
-          <span>Búsqueda de lotes</span>
+          <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
+          <span className="lot-search-title-text">Búsqueda de lotes</span>
         </div>
       </div>
 
       <div className="lot-search-content">
-        <div className="filters-container">
-          <div className="filter-section">
-            <label className="filter-label">Precio</label>
-            <div className="range-slider-container">
-              <div className="range-slider price-range-slider">
-                <span className="output outputOne price-output-min">{priceMin.toLocaleString()}</span>
-                <span className="output outputTwo price-output-max">{priceMax.toLocaleString()}</span>
-                <span className="full-range"></span>
-                <span className="incl-range"></span>
-                <input 
-                  name="priceMin" 
-                  value={priceMin} 
-                  min={priceBounds.min} 
-                  max={priceBounds.max} 
-                  step="1000" 
-                  type="range"
-                  onChange={handlePriceMinChange}
-                />
-                <input 
-                  name="priceMax" 
-                  value={priceMax} 
-                  min={priceBounds.min} 
-                  max={priceBounds.max} 
-                  step="1000" 
-                  type="range"
-                  onChange={handlePriceMaxChange}
-                />
-              </div>
+        {/* Price range */}
+        <div className="filter-section">
+          <label className="filter-label">Precio</label>
+          <div className="range-slider-container">
+            <div className="range-slider price-range-slider">
+              <span className="output outputOne price-output-min">${priceMin.toLocaleString()}</span>
+              <span className="output outputTwo price-output-max">${priceMax.toLocaleString()}</span>
+              <span className="full-range"></span>
+              <span className="incl-range"></span>
+              <input name="priceMin" value={priceMin} min={priceBounds.min} max={priceBounds.max} step="1000" type="range" onChange={handlePriceMinChange} />
+              <input name="priceMax" value={priceMax} min={priceBounds.min} max={priceBounds.max} step="1000" type="range" onChange={handlePriceMaxChange} />
             </div>
           </div>
-          
-          <div className="filter-section">
-            <label className="filter-label">Área</label>
-            <div className="range-slider-container">
-              <div className="range-slider area-range-slider">
-                <span className="output outputOne area-output-min">{areaMin}</span>
-                <span className="output outputTwo area-output-max">{areaMax}</span>
-                <span className="full-range"></span>
-                <span className="incl-range"></span>
-                <input 
-                  name="areaMin" 
-                  value={areaMin} 
-                  min={areaBounds.min} 
-                  max={areaBounds.max} 
-                  step="1" 
-                  type="range"
-                  onChange={handleAreaMinChange}
-                />
-                <input 
-                  name="areaMax" 
-                  value={areaMax} 
-                  min={areaBounds.min} 
-                  max={areaBounds.max} 
-                  step="1" 
-                  type="range"
-                  onChange={handleAreaMaxChange}
-                />
-              </div>
+        </div>
+
+        {/* Area range */}
+        <div className="filter-section">
+          <label className="filter-label">Área</label>
+          <div className="range-slider-container">
+            <div className="range-slider area-range-slider">
+              <span className="output outputOne area-output-min">{areaMin} m²</span>
+              <span className="output outputTwo area-output-max">{areaMax} m²</span>
+              <span className="full-range"></span>
+              <span className="incl-range"></span>
+              <input name="areaMin" value={areaMin} min={areaBounds.min} max={areaBounds.max} step="1" type="range" onChange={handleAreaMinChange} />
+              <input name="areaMax" value={areaMax} min={areaBounds.min} max={areaBounds.max} step="1" type="range" onChange={handleAreaMaxChange} />
             </div>
           </div>
-          
-          <div className="clear-filters-container">
-            <button className="clear-filters" id="clearFiltersBtn" onClick={handleClearFilters}>
-              Limpiar filtros
+        </div>
+
+        {/* Clear filters */}
+        <button className="clear-filters-btn" id="clearFiltersBtn" onClick={handleClearFilters}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>filter_alt_off</span>
+          Limpiar filtros
+        </button>
+
+        {/* Sort — custom dropdown */}
+        <div className="filter-section">
+          <label className="filter-label">Ordenar por</label>
+          <div className="custom-dropdown" ref={sortRef}>
+            <button className={`custom-dropdown-trigger ${sortOpen ? 'open' : ''}`} onClick={() => setSortOpen(!sortOpen)}>
+              <span className="custom-dropdown-label">{sortLabel}</span>
+              <span className="material-symbols-outlined custom-dropdown-arrow">expand_more</span>
             </button>
+            {sortOpen && (
+              <div className="custom-dropdown-menu">
+                {SORT_OPTIONS.map(o => (
+                  <button
+                    key={o.value}
+                    className={`custom-dropdown-item ${sortBy === o.value ? 'selected' : ''}`}
+                    onClick={() => handleSortSelect(o.value)}
+                  >
+                    {sortBy === o.value && <span className="material-symbols-outlined check-icon">check</span>}
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="filters-secondary">
-          <div className="filter-section">
-            <label className="filter-label">Ordenar por</label>
-            <div className="dropdown-container">
-              <select 
-                id="sortSelect" 
-                className="sort-dropdown"
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  // Llamar a la función de Cesium para actualizar los datos
-                  if (window.loadLotData) {
-                    window.loadLotData();
-                  }
-                }}
+        {/* Status */}
+        <div className="filter-section">
+          <label className="filter-label">Estado</label>
+          <div className="status-buttons">
+            {/* Keep both class names: status-pill for styling + status-btn + data-status for Cesium */}
+            {['vendido','reservado','negociacion','disponible'].map(s => (
+              <button
+                key={s}
+                className={`status-pill status-btn ${s} ${status === s ? 'active' : ''}`}
+                data-status={s}
+                onClick={() => handleStatusChange(s)}
               >
-                <option value="area-asc">Área: de menor a mayor</option>
-                <option value="area-desc">Área: de mayor a menor</option>
-                <option value="price-asc">Precio: de menor a mayor</option>
-                <option value="price-desc">Precio: de mayor a menor</option>
-                <option value="number-asc">Número: de menor a mayor</option>
-                <option value="number-desc">Número: de mayor a menor</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="filter-section">
-            <label className="filter-label">Estado</label>
-            <div className="status-buttons" key={`status-buttons-${status}`}>
-              <button 
-                className={`status-btn vendido ${status === 'vendido' ? 'active' : ''}`}
-                data-status="vendido"
-                onClick={() => handleStatusChange('vendido')}
-                key={`vendido-${status}`}
-              >
-                Vendido
+                {{ vendido:'Vendido', reservado:'Reservado', negociacion:'Negociación', disponible:'Disponible' }[s]}
               </button>
-              <button 
-                className={`status-btn reservado ${status === 'reservado' ? 'active' : ''}`}
-                data-status="reservado"
-                onClick={() => handleStatusChange('reservado')}
-                key={`reservado-${status}`}
-              >
-                Reservado
-              </button>
-              <button 
-                className={`status-btn negociacion ${status === 'negociacion' ? 'active' : ''}`}
-                data-status="negociacion"
-                onClick={() => handleStatusChange('negociacion')}
-                key={`negociacion-${status}`}
-              >
-                Negociación
-              </button>
-              <button 
-                className={`status-btn disponible ${status === 'disponible' ? 'active' : ''}`}
-                data-status="disponible"
-                onClick={() => handleStatusChange('disponible')}
-                key={`disponible-${status}`}
-              >
-                Disponible
-              </button>
-            </div>
+            ))}
           </div>
         </div>
 
+        {/* Results */}
         <div className="results-section">
           <div className="results-count" id="resultsCount">Mostrando (0) lotes</div>
-          <div className="lot-cards-container" id="lotCardsContainer">
-          </div>
+          <div className="lot-cards-container" id="lotCardsContainer"></div>
         </div>
       </div>
     </div>

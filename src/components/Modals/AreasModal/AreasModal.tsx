@@ -24,18 +24,14 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
   }, []);
   
   const handleClose = () => {
-    // Resetear todo cuando se cierra completamente
     setIsHidden(false);
     onClose?.();
   };
 
-
   const handleShow = () => {
-    // Mostrar el modal nuevamente
     setIsHidden(false);
   };
 
-  // Ocultar el botón de reabrir cuando se cambia de sección
   useEffect(() => {
     if (!isVisible) {
       setIsHidden(false);
@@ -51,17 +47,14 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
   const handleViewOnMap = (fid: number) => {
     if (window.flyToAreaComun) {
       window.flyToAreaComun(fid);
-      // Solo ocultar en móviles, en desktop mantener el modal abierto
       if (isMobile) {
         setTimeout(() => {
           setIsHidden(true);
         }, 1000);
       }
-      // En desktop no hacer nada más, solo mover la cámara
     }
   };
 
-  // No renderizar si no es visible
   if (!isVisible) return null;
 
   return (
@@ -69,25 +62,25 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
       {/* Botón para reabrir el modal en móviles cuando está oculto */}
       {isMobile && isHidden && (
         <button 
-          className="reopen-areas-modal-btn"
+          className="reopen-areas-modal-btn hud-glass-panel hud-gold-edge shadow-2xl"
           onClick={handleShow}
           title="Reabrir áreas comunes"
         >
-          <i className="fas fa-map-marker-alt"></i>
+          <span className="material-symbols-outlined text-primary">park</span>
         </button>
       )}
 
       {/* Modal principal */}
       {!isHidden && (
-        <div className={`common-areas-modal background-container border-container ${isMobile ? 'mobile-modal' : ''}`} id="commonAreasModalOverlay">
-          <button className="close-btn" id="closeCommonAreasModal" onClick={handleClose}>
-            <i className="fas fa-times"></i>
+        <div className={`common-areas-modal hud-glass-panel hud-gold-edge ${isMobile ? 'mobile-modal' : ''}`} id="commonAreasModalOverlay">
+          <button className="areas-close-btn" id="closeCommonAreasModal" onClick={handleClose}>
+            <span className="material-symbols-outlined">close</span>
           </button>
       
       <div className="common-areas-modal-header">
         <div className="common-areas-modal-title">
-          <img src="/images/sidebar/areas/comunidad.svg" alt="Comunidad" className="common-areas-modal-icon" />
-          <span>Comunidad</span>
+          <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>park</span>
+          <span className="font-h3 text-h3 text-on-surface">Comunidad</span>
         </div>
       </div>
       
@@ -99,25 +92,27 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
                 const { fid, name, image } = feature.properties;
 
                 return (
-                  <div key={fid} className={`common-areas-card background-container border-container ${isMobile ? 'mobile-card' : ''}`} data-marker={`area_comun_${fid}`}>
+                  <div key={fid} className={`areas-card hud-glass-panel border-white/5 ${isMobile ? 'mobile-card' : ''}`} data-marker={`area_comun_${fid}`}>
                     <div 
-                      className="common-areas-card-image" 
+                      className="areas-card-image" 
                       style={{ backgroundImage: `url('${image}')` }}
                     />
-                    <div className="common-areas-card-content">
-                      <div className="common-areas-card-title">{name}</div>
-                      <div className="common-areas-card-buttons">
+                    <div className="areas-card-content">
+                      <div className="areas-card-title">{name}</div>
+                      <div className="areas-card-buttons">
                         <button 
-                          className="background-btn common-areas-card-button" 
+                          className="areas-btn-secondary" 
                           onClick={() => handleViewImage(image)}
                         >
-                          <span>Ver imágenes</span>
+                          <span className="material-symbols-outlined text-[18px]">image</span>
+                          <span>Imágenes</span>
                         </button>
                         <button 
-                          className="common-areas-card-button" 
+                          className="areas-btn-primary" 
                           onClick={() => handleViewOnMap(fid)}
                         >
-                          <span>Ver en el mapa</span>
+                          <span className="material-symbols-outlined text-[18px]">near_me</span>
+                          <span>Ver mapa</span>
                         </button>
                       </div>
                     </div>
@@ -125,7 +120,7 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
                 );
               })
             ) : (
-              <div>No hay áreas comunes disponibles</div>
+              <div className="no-data-text">No hay áreas comunes disponibles</div>
             )}
           </div>
         </div>

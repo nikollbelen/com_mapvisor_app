@@ -21,38 +21,19 @@ const EntornoButtons = ({ isVisible = false }: EntornoButtonsProps) => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Controlar la visibilidad del desplegable de status buttons
-  useEffect(() => {
-    if (isMobile && isVisible) {
-      // Ocultar el desplegable de status buttons cuando está en entorno
-      const statusContainer = document.querySelector('.mobile-status-container');
-      if (statusContainer) {
-        (statusContainer as HTMLElement).style.display = 'none';
-      }
-    } else if (isMobile && !isVisible) {
-      // Mostrar el desplegable de status buttons cuando sale de entorno
-      const statusContainer = document.querySelector('.mobile-status-container');
-      if (statusContainer) {
-        (statusContainer as HTMLElement).style.display = 'block';
-      }
-    }
-  }, [isMobile, isVisible]);
-
   const entornoButtons = [
-    { id: 'todos', icon: '/images/sidebar/icon_entorno.svg', alt: 'Todos', text: 'Todos' },
-    { id: 'playas', icon: '/images/sidebar/entorno/iconos/playas.svg', alt: 'Playas', text: 'Playas' },
-    { id: 'restaurantes', icon: '/images/sidebar/entorno/iconos/restaurantes.svg', alt: 'Restaurantes', text: 'Restaurantes' },
-    { id: 'hoteles', icon: '/images/sidebar/entorno/iconos/hoteles.svg', alt: 'Hoteles', text: 'Hoteles' },
-    { id: 'turismo', icon: '/images/sidebar/entorno/iconos/turismo.svg', alt: 'Turismo', text: 'Turismo' },
-    { id: 'seguridad', icon: '/images/sidebar/entorno/iconos/seguridad.svg', alt: 'Seguridad', text: 'Seguridad' }
+    { id: 'todos', icon: 'apps', text: 'Todos' },
+    { id: 'playas', icon: 'beach_access', text: 'Playas' },
+    { id: 'restaurantes', icon: 'restaurant', text: 'Restaurantes' },
+    { id: 'hoteles', icon: 'hotel', text: 'Hoteles' },
+    { id: 'turismo', icon: 'tour', text: 'Turismo' },
+    { id: 'seguridad', icon: 'local_police', text: 'Seguridad' }
   ];
 
   const handleButtonClick = (buttonId: string) => {
     setActiveButton(buttonId);
     
-    // Llamar a la función de Cesium para filtrar por tipo
     if (window.filterEntornoByType) {
-      // Mapear el ID del botón al tipo de filtro
       const tipoMap: { [key: string]: string } = {
         'todos': 'Todos',
         'playas': 'Playas',
@@ -67,20 +48,21 @@ const EntornoButtons = ({ isVisible = false }: EntornoButtonsProps) => {
     }
   };
 
-  // No renderizar si no es visible
   if (!isVisible) return null;
 
   return (
-    <div className={`around-buttons-container ${isMobile ? 'mobile-entorno' : ''}`} id="aroundButtonsContainer" style={{ display: 'flex' }}>
+    <div className={`entorno-dock hud-glass-panel hud-gold-edge ${isMobile ? 'mobile-entorno' : ''}`} id="aroundButtonsContainer">
       {entornoButtons.map((button) => (
-        <div 
+        <button 
           key={button.id}
-          className={`around-button ${activeButton === button.id ? 'active' : ''}`}
+          className={`entorno-pill ${activeButton === button.id ? 'active' : ''}`}
           onClick={() => handleButtonClick(button.id)}
         >
-          <img src={button.icon} alt={button.alt} />
-          <span>{button.text}</span>
-        </div>
+          <span className="material-symbols-outlined entorno-icon">
+            {button.icon}
+          </span>
+          <span className="entorno-text">{button.text}</span>
+        </button>
       ))}
     </div>
   );

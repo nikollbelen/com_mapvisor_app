@@ -8,7 +8,7 @@
   right: 20px;
   transform: translateY(-50%);
   padding: 2rem 3rem;
-  color: white;
+  color: var(--text-color);
   width: 32rem;
   min-width: 500px;
   max-width: 90vw;
@@ -20,6 +20,11 @@
   flex-direction: column;
   transform-style: preserve-3d;
   transition: transform 0.8s ease-in-out;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-amount));
+  border-radius: 1.5rem;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-dark);
 }
 
 /* Animación 3D de flip */
@@ -140,7 +145,7 @@
   position: relative;
   background: none;
   border: none;
-  color: white;
+  color: var(--text-secondary);
   text-decoration: none;
   cursor: pointer;
   font-size: 14px;
@@ -150,7 +155,7 @@
   gap: 5px;
   padding: 5px;
   border-radius: 0;
-  transition: color 0.3s ease;
+  transition: var(--transition-fast);
 }
 
 .lot-modal-back .lot-modal-back-link {
@@ -161,7 +166,7 @@
 }
 
 .lot-modal-back-link:hover {
-  color: #ccc;
+  color: var(--primary-green);
 }
 
 .lot-modal-back-link i {
@@ -209,16 +214,7 @@
   padding-bottom: 1rem;
   margin-bottom: 1rem;
   gap: 12px;
-  border-bottom: 1px solid;
-  border-image: linear-gradient(
-      to right,
-      transparent 0%,
-      rgba(255, 255, 255, 0.2) 15%,
-      rgba(255, 255, 255, 0.8) 50%,
-      rgba(255, 255, 255, 0.2) 85%,
-      transparent 100%
-    )
-    1;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .lot-center {
@@ -236,9 +232,10 @@
 }
 
 .lot-box span {
-  font-size: 16px;
-  color: white;
-  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--text-color);
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
 }
 
 .lot-stage-badge {
@@ -263,16 +260,7 @@
 .lot-property-details {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid;
-  border-image: linear-gradient(
-      to right,
-      transparent 0%,
-      rgba(255, 255, 255, 0.2) 15%,
-      rgba(255, 255, 255, 0.8) 50%,
-      rgba(255, 255, 255, 0.2) 85%,
-      transparent 100%
-    )
-    1;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .lot-detail-row {
@@ -283,21 +271,21 @@
 }
 
 .lot-detail-label {
-  font-size: 16px;
-  color: white;
+  font-size: 1rem;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .lot-detail-value {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: var(--text-color);
 }
 
 .lot-separator {
   height: 1px;
-  background: #444;
-  margin: 20px 0;
+  background: var(--glass-border);
+  margin: 1.5rem 0;
 }
 
 .lot-boundaries-section {
@@ -305,18 +293,19 @@
 }
 
 .lot-boundaries-title {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-color);
+  font-family: 'Outfit', sans-serif;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 1.25rem;
 }
 
 .lot-boundaries-card {
-  background: rgba(14, 14, 14, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 12px;
-  padding: 20px;
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
 }
 
 .lot-boundary-item {
@@ -330,14 +319,16 @@
 }
 
 .lot-boundary-icon {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #ffffff;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--glass-border);
+  background: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: var(--shadow-light);
 }
 
 .lot-boundary-icon-svg {
@@ -347,14 +338,15 @@
 
 .lot-boundary-label {
   flex: 1;
-  font-size: 14px;
-  color: white;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .lot-boundary-value {
-  font-size: 14px;
-  color: white;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  font-weight: 600;
 }
 
 .lot-whatsapp-btn {
@@ -376,9 +368,9 @@
 }
 
 .lot-whatsapp-btn:hover {
-  background: linear-gradient(135deg, #444 0%, #555 100%);
+  background: var(--primary-green-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-dark);
 }
 
 /* Contenedor de botones para usuarios no logueados */
@@ -391,20 +383,20 @@
 /* Botón de contacto WhatsApp */
 .lot-contact-btn {
   flex: 1;
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(5px);
-  color: white;
+  background-color: white;
+  color: var(--text-color);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: 0.75rem;
   padding: 14px 16px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.3s ease;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-light);
 }
 
 .lot-contact-btn:hover:not(:disabled) {
@@ -449,9 +441,10 @@
 }
 
 .quotation-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  font-family: 'Outfit', sans-serif;
   text-align: center;
   margin: 1.5rem 0;
 }
@@ -459,8 +452,8 @@
 .quotation-divider {
   width: 90%;
   height: 1px;
-  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.2) 15%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.2) 85%, transparent 100%);
-  margin: 1rem 8px 0;
+  background: var(--glass-border);
+  margin: 1rem auto;
 }
 
 .quotation-close-btn {
@@ -487,16 +480,18 @@
 }
 
 .quotation-table-header {
-  border: 1px solid #333;
-  border-radius: 0 0 0.7rem 0.7rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem 0.75rem 0 0;
   display: grid;
   grid-template-columns: 0.8fr 1fr 0.6fr 1.1fr 1fr;
   gap: 8px;
   padding: 12px 20px;
-  background: #0d0d0db3;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
+  background: var(--glass-bg-light);
+  color: var(--text-color);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .quotation-header-cell {
@@ -523,7 +518,7 @@
 .quotation-cell {
   padding: 0;
   text-align: left;
-  color: white;
+  color: var(--text-color);
   font-size: 13px;
   border: none;
 }
@@ -582,9 +577,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  border-bottom: 1px solid #333;
-  border-top: 1px solid #333;
-  background-color: #0d0d0d4d;
+  border-bottom: 1px solid var(--glass-border);
+  border-top: 1px solid var(--glass-border);
+  background-color: var(--glass-bg-light);
 }
 
 .discount-label {
@@ -594,7 +589,7 @@
 }
 
 .discount-value {
-  color: white;
+  color: var(--text-color);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -614,9 +609,9 @@
 }
 
 .total-value {
-  color: #10b981;
-  font-size: 16px;
-  font-weight: 700;
+  color: var(--primary-green);
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
 .payment-schedule-section {

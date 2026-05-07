@@ -1,4 +1,6 @@
-/* ===== FUENTES PERSONALIZADAS ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=Manrope:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 @font-face {
   font-family: "Helvetica Neue";
   src: url("/font/HelveticaNeueRegular.ttf") format("truetype");
@@ -23,54 +25,70 @@ html, body {
 }
 
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ===== SCROLLBAR PERSONALIZADO ===== */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 4px;
-  border: 1px solid #000000;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444444;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
 }
 
 /* ===== VARIABLES CSS GLOBALES ===== */
 :root {
-
   /* Colores de texto */
-  --text-color: #ffffff;
+  --text-color: #1a202c;
+  --text-secondary: #4a5568;
+  --text-on-green: #ffffff;
   
-  /* Colores de fondo */
-  --glass-bg-green: #1DB779;
-  --glass-bg: rgba(14, 14, 14, 0.8);
-  --glass-bg-solid: #0e0e0e;
-  --glass-bg-light: rgb(39 39 39 / 50%);
+  /* Colores de fondo (Light Premium Glassmorphism) */
+  --primary-green: #10b981;
+  --primary-green-hover: #059669;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-bg-solid: #ffffff;
+  --glass-bg-light: rgba(255, 255, 255, 0.45);
+  --glass-bg-green: rgba(16, 185, 129, 0.15);
   
-  /* Colores de borde */
-  --glass-border-green: #23e094;
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-border-light: rgba(255, 255, 255, 0.3);
+  /* Colores de borde (Soft Material Borders) */
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --glass-border-light: rgba(0, 0, 0, 0.06);
+  --glass-border-green: #10b981;
   
-  /* Sombras */
-  --shadow-dark: 0 15px 40px rgba(0, 0, 0, 0.4);
-  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-light: 0 6px 20px rgba(255, 255, 255, 0.15);
+  /* Sombras (Material 3 Elevation) */
+  --shadow-dark: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   
   /* Transiciones */
-  --transition-smooth: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --transition-fast: all 0.3s ease;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.2s ease-in-out;
+  --blur-amount: 15px;
 }
 
 /* ===== LOGO TEXTO PREMIUM ===== */
@@ -117,14 +135,15 @@ body {
 
 .background-container {
   background-color: var(--glass-bg);
-  backdrop-filter: blur(5px);
-  border-radius: 1rem;
+  backdrop-filter: blur(var(--blur-amount));
+  -webkit-backdrop-filter: blur(var(--blur-amount));
+  border-radius: 1.25rem;
   box-shadow: var(--shadow-dark);
 }
 
 .background-light-container {
   background-color: var(--glass-bg-light);
-  border-radius: 1rem;
+  border-radius: 1.25rem;
 }
 
 .border-container {
@@ -132,24 +151,28 @@ body {
 }
 
 .background-btn {
-  background-color: var(--glass-bg-green) !important;
-  border: 0.5px solid var(--glass-border-green) !important;
-  color: var(--text-color) !important;
-  border-radius: 1rem ;
+  background-color: var(--primary-green) !important;
+  color: var(--text-on-green) !important;
+  border: none !important;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-medium);
+  transition: var(--transition-smooth);
 }
 
 .background-btn:hover {
-  background: var(--glass-bg);
-  box-shadow: var(--shadow-light);
+  background-color: var(--primary-green-hover) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-dark);
 }
 
 .close-btn {
   background: var(--glass-bg-solid);
-  border: none;
+  border: 1px solid var(--glass-border);
   color: var(--text-color);
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
+  font-size: 1.25rem;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   border-radius: 50%;
   z-index: 10000;
@@ -159,24 +182,30 @@ body {
   justify-content: center;
   transition: var(--transition-smooth);
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 1.25rem;
+  right: 1.25rem;
 }
 
 .close-btn:hover {
-  transform: scale(1.1);
+  background-color: #f8fafc;
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: var(--shadow-dark);
 }
 
 .btn {
-  background-color: var(--glass-bg);
-  border: 0.5px solid var(--glass-border-light);
+  background-color: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
   color: var(--text-color);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: var(--transition-fast);
 }
 
 .btn:hover {
-  background: var(--glass-bg);
-  box-shadow: var(--shadow-light);
+  background-color: var(--glass-bg);
+  border-color: var(--text-secondary);
+  box-shadow: var(--shadow-medium);
 }
 
 /* ===== ANIMACIONES ===== */
@@ -235,20 +264,19 @@ select {
 
 /* Estilos para opciones de select */
 select option {
-  background: #1a1a1a !important;
-  color: white !important;
-  padding: 8px 12px;
+  background: white !important;
+  color: #1a202c !important;
+  padding: 10px 14px;
 }
 
 select option:checked {
-  background: #10b981 !important;
+  background: var(--primary-green) !important;
   color: white !important;
 }
 
 select option:hover,
 select option:focus {
-  background: #10b981 !important;
-  color: white !important;
+  background: #f1f5f9 !important;
 }
 
 /* Firefox específico - Mejoras para compatibilidad */
@@ -282,6 +310,22 @@ select::-ms-expand {
   display: none;
 }
 
-select::-webkit-select-arrow {
-  display: none;
+
+/* ===== MATERIAL SYMBOLS & UTILITIES ===== */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
 }
+
+.text-gold { color: #e9c176; }

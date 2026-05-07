@@ -247,6 +247,13 @@ async function loadLotesData() {
     const data1 = await resp1.json();
     const data2 = await resp2.json();
     
+    // Marcar los lotes de la versión 2 para que solo estos sean filtrables
+    if (data2.features) {
+      data2.features.forEach(f => {
+        if (f.properties) f.properties._isV2 = true;
+      });
+    }
+
     lotesData = {
       ...data1,
       features: [...(data1.features || []), ...(data2.features || [])]
@@ -327,7 +334,7 @@ async function loadLotesData() {
     // Process and format lot data once
     const feats = lotesData.features || [];
     processedLots = feats
-      .filter((f) => f && f.properties)
+      .filter((f) => f && f.properties && f.properties._isV2) // Solo filtrar lotes de lotesv2.geojson
       .filter((f) => {
         const p = f.properties || {};
         const number = p.number || "";
@@ -560,7 +567,7 @@ async function loadLotesData() {
           e.polygon.heightReference =
             window.Cesium.HeightReference.RELATIVE_TO_GROUND;
           e.polygon.outline = true;
-          e.polygon.outlineColor = window.Cesium.Color.BLACK.withAlpha(0);
+          e.polygon.outlineColor = window.Cesium.Color.WHITE;
           e._baseMaterial =
             window.Cesium.Color.fromCssColorString("#fff").withAlpha(0.01); // Save transparent material
           return; // Skip to next
@@ -571,7 +578,7 @@ async function loadLotesData() {
         e.polygon.heightReference =
           window.Cesium.HeightReference.RELATIVE_TO_GROUND;
         e.polygon.outline = true;
-        e.polygon.outlineColor = window.Cesium.Color.BLACK.withAlpha(0);
+        e.polygon.outlineColor = window.Cesium.Color.WHITE;
         // Configurar polígonos para que no bloqueen los labels
         e.polygon.disableDepthTestDistance = 0; // Los polígonos respetan la profundidad para que los labels estén por encima
 
@@ -735,7 +742,7 @@ function updateLotFromWebSocket(lotData) {
     if (lotesData && Array.isArray(lotesData.features)) {
       const feats = lotesData.features || [];
       processedLots = feats
-        .filter((f) => f && f.properties)
+        .filter((f) => f && f.properties && f.properties._isV2) // Solo filtrar lotes de lotesv2.geojson
         .filter((f) => {
           const p = f.properties || {};
           const number = p.number || "";
@@ -1005,6 +1012,12 @@ function setupLoteInteractions() {
 
   // Click interaction
   handler.setInputAction((click) => {
+    // Bloquear selección de lotes solo si estamos en modos con marcadores (Fotos o Áreas)
+    // para evitar clics accidentales detrás de los marcadores.
+    if (document.getElementById("fotos")?.classList.contains("active") || 
+        document.getElementById("areas")?.classList.contains("active")) {
+      return;
+    }
 
     const picked = viewer.scene.drillPick(click.position) || [];
     let entity = picked.map((p) => p.id).find((id) => id && id.polygon) || null;
@@ -2072,12 +2085,13 @@ async function loadEntornoMarkers(filterType = null) {
           ),
           billboard: {
             image: icono,
-            height: 80,
+            width: 45,
+            height: 58,
             verticalOrigin: window.Cesium.VerticalOrigin.BOTTOM,
             horizontalOrigin: window.Cesium.HorizontalOrigin.CENTER,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             color: window.Cesium.Color.WHITE,
-            scale: 2.0,
+            scale: 1.3,
             show: true,
             alignedAxis: window.Cesium.Cartesian3.ZERO,
             pixelOffset: window.Cesium.Cartesian2.ZERO,
@@ -2254,7 +2268,7 @@ async function calculateRoute(token, start, end, tipo = null) {
       offset: new window.Cesium.HeadingPitchRange(
         window.Cesium.Math.toRadians(0), // horizontal orientation
         window.Cesium.Math.toRadians(-30), // downward tilt
-        boundingSphere.radius * 3 // distance so the entire route fits
+        boundingSphere.radius * 5 // distance so the entire route fits
       ),
     });
 

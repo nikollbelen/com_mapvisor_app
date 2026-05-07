@@ -16,17 +16,18 @@
 }
 
 .contact-modal {
-  background: #0d0d0df2;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-amount));
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-dark);
   max-width: 500px;
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
   animation: contactSlideIn 0.3s ease-out;
-  border: 2px solid #333;
-  color: white;
-  transform: none !important; /* Asegurar que no herede transformaciones */
+  border: 1px solid var(--glass-border);
+  color: var(--text-color);
+  transform: none !important;
 }
 
 .contact-modal-header {
@@ -41,15 +42,16 @@
 .contact-modal-divider {
   width: 90%;
   height: 1px;
-  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.2) 15%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.2) 85%, transparent 100%);
-  margin: 0 8px;
+  background: var(--glass-border);
+  margin: 0 auto;
 }
 
 .contact-modal-title {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  font-family: 'Outfit', sans-serif;
   text-align: center;
 }
 
@@ -67,9 +69,9 @@
 }
 
 .contact-modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  transform: scale(1.1);
+  background-color: var(--glass-bg-light);
+  color: var(--text-color);
+  transform: scale(1.1) rotate(90deg);
 }
 
 .contact-modal-content {
@@ -123,21 +125,20 @@
 
 .contact-form .input-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 6px;
-  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
 }
 
 .contact-form .form-input {
   padding: 12px 16px;
   border: 1px solid var(--glass-border);
-  border-radius: 11px;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  background: var(--glass-bg);
-  color: white;
-  transition: all 0.3s;
+  background: white;
+  color: var(--text-color);
+  transition: var(--transition-fast);
 }
 
 .contact-form .form-input::placeholder {
@@ -146,9 +147,9 @@
 
 .contact-form .form-input:focus {
   outline: none;
-  border-color: #10b981;
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  border-color: var(--primary-green);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
 .contact-form .form-input.error {
@@ -163,13 +164,12 @@
 
 /* Estilos para opciones de select con form-input */
 .contact-form select.form-input {
-  background: var(--glass-bg);
-  color: white;
+  background: white;
+  color: var(--text-color);
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  color-scheme: dark;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   pointer-events: all;
   position: relative;
@@ -270,38 +270,39 @@
 
 .contact-modal .btn-secondary {
   padding: 12px 24px;
-  background: var(--glass-bg);
-  color: white;
+  background: white;
+  color: var(--text-color);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: var(--transition-smooth);
 }
 
 .contact-modal .btn-secondary:hover {
-  background: linear-gradient(135deg, #555 0%, #444 100%);
+  background: #f8fafc;
+  border-color: var(--text-secondary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .contact-modal .btn-primary {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #10b981 0%, #0ea472 100%);
+  background: var(--primary-green);
   color: white;
-  border: 2px solid #10b981;
-  border-radius: 8px;
+  border: none;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: var(--transition-smooth);
 }
 
 .contact-modal .btn-primary:hover {
-  background: linear-gradient(135deg, #0ea472 0%, #0d8a5f 100%);
+  background: var(--primary-green-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-dark);
 }
 
 .input-suffix-wrap {

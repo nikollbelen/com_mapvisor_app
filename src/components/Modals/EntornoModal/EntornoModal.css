@@ -1,268 +1,217 @@
-/* ========================================
-   MODAL DE ENTORNO
-   ======================================== */
+/* ===== PREMIUM ENTORNO MODAL STYLES ===== */
+
 .around-modal {
   position: fixed;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  color: white;
-  width: 30rem;
-  min-width: 350px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-  pointer-events: auto;
-  z-index: 1001;
+  top: 100px;
+  right: 24px;
+  width: 400px;
+  max-height: calc(100vh - 140px);
+  padding: 24px;
+  z-index: 100;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  animation: modalFadeInUp 0.4s ease-out forwards;
+  border-radius: 20px;
+}
+
+@keyframes modalFadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .around-modal-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 24px 24px 16px 24px;
-  flex-shrink: 0;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.around-modal-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(255, 255, 255, 0) 15%,
-    rgba(255, 255, 255, 0.8) 50%,
-    rgba(255, 255, 255, 0) 85%,
-    transparent 100%
-  );
+  justify-content: space-between;
 }
 
 .around-modal-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: white;
-  text-align: center;
-  margin: 0;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.around-modal-title img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
+.around-modal-title span {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e2e2;
+}
+
+.around-modal-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .around-modal-content {
-  padding: 2rem 3rem;
   overflow-y: auto;
-  flex: 1;
-  min-height: 0;
+  padding-right: 8px;
 }
 
-/* Style scrollbar for location-modal-content */
 .around-modal-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.around-modal-content::-webkit-scrollbar-track {
-  background: #000000;
-  border-radius: 4px;
+  width: 4px;
 }
 
 .around-modal-content::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 4px;
-  border: 1px solid #000000;
-}
-
-.around-modal-content::-webkit-scrollbar-thumb:hover {
-  background: #444444;
-}
-
-/* For Firefox */
-.around-modal-content {
-  scrollbar-width: thin;
-  scrollbar-color: #333333 #000000;
-}
-
-.around-section {
-  margin-bottom: 32px;
-}
-
-.around-section:last-child {
-  margin-bottom: 0;
+  background: #e9c176;
+  border-radius: 10px;
 }
 
 .around-card-image {
   width: 100%;
-  height: 15rem;
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
+  height: 200px;
+  border-radius: 16px;
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
-}
-
-.around-card-image::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.6) 30%,
-    rgba(0, 0, 0, 0.2) 60%,
-    transparent 100%
-  );
-  z-index: 1;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .around-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-  margin-bottom: 16px;
-  text-align: center;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 
-.around-card-details {
-  margin-top: 16px;
+.around-card-title > span {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e2e2;
+}
+
+.around-card-time-estimate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(233, 193, 118, 0.1);
+  border: 1px solid rgba(233, 193, 118, 0.3);
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #e9c176;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  width: fit-content;
 }
 
 .around-card-details h2 {
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9a8f80;
   margin-bottom: 8px;
-  text-align: center;
 }
 
 .around-card-details p {
-  text-align: center;
-  color: white;
-  margin-bottom: 16px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  color: #e2e2e2;
+  margin-bottom: 24px;
 }
 
 .around-card-info-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 12px;
-  padding: 4px 0;
-}
-
-.around-card-time-estimate {
-  border: 1px solid #499CFB;
-  background: #499cfb33;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.around-card-time-estimate.inline {
-  cursor: default;
-  white-space: nowrap;
+  gap: 10px;
 }
 
 .around-card-link-button {
-  border: none;
-  background-color: rgba(148, 143, 143, 0.5);
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 9px 14px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.around-card-link-button:hover {
-  background-color: rgba(44, 69, 117, 0.05);
-}
-
-/* ========================================
-   MOBILE STYLES
-   ======================================== */
-
-/* Modal centrado en móviles */
-.mobile-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  right: auto;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 500px;
-  max-height: 80vh;
-}
-
-/* Botón para reabrir el modal en móviles */
-.reopen-entorno-modal-btn {
-  position: fixed;
-  top: 80px; /* Debajo de la barra del sidebar */
-  left: 20px;
-  z-index: 1000;
-  background: #0e0e0e;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  flex: 1;
   padding: 12px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  border-radius: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.reopen-entorno-modal-btn:hover {
-  background: #1a1a1a;
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-.reopen-entorno-modal-btn i {
+.around-card-link-button i {
   font-size: 16px;
 }
 
-/* Media queries para responsive */
-@media (max-width: 1024px) {
-  .around-modal:not(.mobile-modal) {
-    display: none;
-  }
+/* Primary style for route button */
+#calculateRouteBtn {
+  background: linear-gradient(135deg, #e9c176 0%, #c5a059 100%);
+  color: #121414;
+  border: none;
 }
 
-@media (min-width: 1025px) {
-  .mobile-modal {
-    display: none;
-  }
-  
-  .reopen-entorno-modal-btn {
-    display: none;
+#calculateRouteBtn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+/* Secondary style for Google Maps */
+#openGoogleMapsBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e2e2;
+}
+
+#openGoogleMapsBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e9c176;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9a8f80;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e2e2;
+  transform: rotate(90deg);
+}
+
+.reopen-entorno-modal-btn {
+  position: fixed;
+  bottom: 140px;
+  left: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reopen-entorno-modal-btn:hover {
+  transform: scale(1.1);
+}
+
+@media (max-width: 1024px) {
+  .around-modal {
+    top: auto;
+    bottom: 24px;
+    right: 24px;
+    left: 24px;
+    width: auto;
+    max-width: 480px;
+    margin: 0 auto;
   }
 }

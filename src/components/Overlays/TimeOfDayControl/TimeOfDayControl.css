@@ -1,264 +1,167 @@
-/* Botón del sol cuando está colapsado */
+/* ===== UPDATED TIME OF DAY CONTROL STYLES (Using HUD namespace) ===== */
+
 .time-of-day-toggle-btn {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  background: rgba(14, 14, 14, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  top: 24px; /* Default for horizontal as per diseñoHorizontal/code.html */
+  right: 24px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 999;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 50;
   transition: all 0.3s ease;
 }
 
 .time-of-day-toggle-btn:hover {
-  background: rgba(14, 14, 14, 1);
-  border-color: rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-}
-
-.sun-icon {
-  font-size: 28px;
-  display: block;
-  line-height: 1;
 }
 
 .time-of-day-control {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  background: rgba(14, 14, 14, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  min-width: 280px;
-  transition: all 0.3s ease;
-  animation: slideIn 0.3s ease;
+  top: 84px;
+  right: 24px;
+  width: 280px;
+  padding: 24px;
+  z-index: 100;
+  animation: slideInRight 0.3s ease-out;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.time-of-day-control.mobile {
-  top: 10px;
-  right: 10px;
-  left: 10px;
-  min-width: auto;
-  padding: 15px;
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .time-of-day-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-}
-
-.time-of-day-icon {
-  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .time-of-day-title {
-  color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
-  font-weight: 600;
-  flex: 1;
+  font-weight: 700;
+  color: #e2e2e2;
 }
 
 .time-of-day-close-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  line-height: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d1c5b4;
   width: 28px;
   height: 28px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .time-of-day-close-btn:hover {
-  color: white;
   background: rgba(255, 255, 255, 0.1);
+  color: #e2e2e2;
 }
 
 .time-of-day-display {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .time-value {
-  color: #10b981;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 32px;
   font-weight: 700;
-  margin-bottom: 5px;
-  font-variant-numeric: tabular-nums;
+  color: #e9c176;
 }
 
 .time-label {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.1em;
+  color: #9a8f80;
+  margin-top: 4px;
 }
 
 .time-of-day-slider-container {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .time-of-day-slider {
   width: 100%;
-  height: 6px;
-  border-radius: 3px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
   outline: none;
   -webkit-appearance: none;
-  appearance: none;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: background 0.3s ease;
 }
 
-.time-of-day-slider:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Estilos para el slider en Chrome/Safari */
 .time-of-day-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
+  background: #e9c176;
   border-radius: 50%;
-  background: #10b981;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-  transition: all 0.3s ease;
-}
-
-.time-of-day-slider::-webkit-slider-thumb:hover {
-  background: #0ea472;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
-}
-
-/* Estilos para el slider en Firefox */
-.time-of-day-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #10b981;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-  transition: all 0.3s ease;
-}
-
-.time-of-day-slider::-moz-range-thumb:hover {
-  background: #0ea472;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0-10px rgba(233, 193, 118, 0.5);
 }
 
 .slider-labels {
   display: flex;
   justify-content: space-between;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
-  margin-top: 5px;
+  margin-top: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  color: #4e4639;
 }
 
 .time-presets {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
 .preset-btn {
-  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: 10px;
+  padding: 10px;
+  color: #d1c5b4;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-transform: capitalize;
 }
 
 .preset-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(197, 160, 89, 0.3);
 }
 
 .preset-btn.active {
-  background: #10b981;
-  border-color: #10b981;
-  color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.preset-btn.active:hover {
-  background: #0ea472;
-  border-color: #0ea472;
+  background: rgba(233, 193, 118, 0.1);
+  border-color: rgba(197, 160, 89, 0.5);
+  color: #e9c176;
 }
 
 @media (max-width: 1024px) {
-  /* En móvil, posicionar debajo del mobile-top-bar (60px de altura) */
   .time-of-day-toggle-btn {
-    top: 70px; /* 60px (altura del mobile-top-bar) + 10px de margen */
-    right: 10px;
-    width: 45px;
-    height: 45px;
+    top: 96px; /* Position from diseñoVertical/normal/code.html */
+    right: 24px;
   }
   
-  .time-of-day-control.mobile {
-    top: 70px; /* 60px (altura del mobile-top-bar) + 10px de margen */
-    right: 10px;
-    left: 10px;
-    min-width: auto;
-    padding: 15px;
-  }
-  
-  .sun-icon {
-    font-size: 24px;
-  }
-  
-  .time-presets {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .time-value {
-    font-size: 28px;
+  .time-of-day-control {
+    top: auto;
+    bottom: 140px;
+    right: 24px;
+    width: calc(100vw - 48px);
+    max-width: 320px;
   }
 }
-

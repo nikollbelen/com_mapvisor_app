@@ -1,305 +1,177 @@
-/* ========================================
-   MODAL DE ÁREAS COMUNES
-   ======================================== */
+/* ===== PREMIUM AREAS MODAL STYLES ===== */
 
 .common-areas-modal {
   position: fixed;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  color: white;
-  width: 30rem;
-  min-width: 350px;
-  max-width: 90vw;
-  max-height: 90vh;
-  pointer-events: auto;
-  z-index: 998;
+  top: 100px;
+  right: 24px;
+  width: 420px;
+  max-height: calc(100vh - 140px);
+  padding: 24px;
+  z-index: 100;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  animation: modalFadeInUp 0.4s ease-out forwards;
+  border-radius: 20px;
+}
+
+.areas-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9a8f80;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.areas-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e2e2;
+  transform: rotate(90deg);
 }
 
 .common-areas-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 24px 16px 24px;
-  flex-shrink: 0;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.common-areas-modal-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(255, 255, 255, 0) 15%,
-    rgba(255, 255, 255, 0.8) 50%,
-    rgba(255, 255, 255, 0) 85%,
-    transparent 100%
-  );
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
 }
 
 .common-areas-modal-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: white;
-  text-align: center;
-  margin: 0;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.common-areas-modal-icon {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-
 .common-areas-modal-content {
-  padding: 2rem 3rem;
   overflow-y: auto;
-  flex: 1;
-  min-height: 0;
+  padding-right: 8px;
 }
 
 .common-areas-modal-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.common-areas-modal-content::-webkit-scrollbar-track {
-  background: #000000;
-  border-radius: 4px;
+  width: 4px;
 }
 
 .common-areas-modal-content::-webkit-scrollbar-thumb {
-  background: #333333;
-  border-radius: 4px;
-  border: 1px solid #000000;
+  background: #e9c176;
+  border-radius: 10px;
 }
 
-.common-areas-modal-content::-webkit-scrollbar-thumb:hover {
-  background: #444444;
-}
-
-/* For Firefox */
-.common-areas-modal-content {
-  scrollbar-width: thin;
-  scrollbar-color: #333333 #000000;
-}
-
-.common-areas-section {
-  margin-bottom: 32px;
-}
-
-.common-areas-section:last-child {
-  margin-bottom: 0;
-}
-
-.common-areas-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.common-areas-card {
+.areas-card {
+  margin-bottom: 16px;
+  overflow: hidden;
   border-radius: 16px;
   transition: all 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
 }
 
-.common-areas-card-image {
+.areas-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(233, 193, 118, 0.3);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.areas-card-image {
+  height: 140px;
   width: 100%;
-  height: 120px;
-  margin-bottom: 16px;
-  position: relative;
-  overflow: hidden;
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.common-areas-card-image::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.6) 30%,
-    rgba(0, 0, 0, 0.2) 60%,
-    transparent 100%
-  );
-  z-index: 1;
+.areas-card-content {
+  padding: 16px;
 }
 
-.common-areas-card-title {
+.areas-card-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
-  font-weight: 600;
-  color: white;
+  font-weight: 700;
+  color: #e2e2e2;
   margin-bottom: 16px;
-  text-align: center;
 }
 
-.common-areas-card-buttons {
-  margin: auto;
-  width: fit-content;
+.areas-card-buttons {
   display: flex;
-  flex-direction: column;
   gap: 8px;
-  margin-bottom: 1rem;
 }
 
-.common-areas-card-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
+.areas-btn-primary, .areas-btn-secondary {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.common-areas-card-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+.areas-btn-primary {
+  background: linear-gradient(135deg, #e9c176 0%, #c5a059 100%);
+  color: #121414;
+  border: none;
 }
 
-/* ========================================
-   MOBILE STYLES
-   ======================================== */
-
-/* Modal centrado en móviles */
-.mobile-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  right: auto;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 500px;
-  max-height: 80vh;
+.areas-btn-primary:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
 }
 
-/* Grid de una columna en móviles */
-.mobile-grid {
-  grid-template-columns: 1fr;
-  gap: 20px;
+.areas-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e2e2;
 }
 
-/* Card horizontal en móviles */
-.mobile-card {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+.areas-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e9c176;
 }
 
-.mobile-modal-content {
-  padding: 1.5rem 1rem;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
+.no-data-text {
+  text-align: center;
+  color: #9a8f80;
+  padding: 40px 0;
+  font-family: 'Manrope', sans-serif;
 }
 
-.mobile-card .common-areas-card-image {
-  width: 120px;
-  height: 100%;
-  margin-bottom: 0;
-  flex-shrink: 0;
-}
-
-.mobile-card .common-areas-card-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 1.5rem;
-}
-
-.mobile-card .common-areas-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-  margin-bottom: 0;
-  text-align: left;
-}
-
-.mobile-card .common-areas-card-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  width: 100%;
-}
-
-.mobile-card .common-areas-card-button {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 12px;
-  min-width: 0;
-}
-
-/* Botón para reabrir el modal en móviles */
 .reopen-areas-modal-btn {
   position: fixed;
-  top: 80px; /* Debajo de la barra del sidebar */
-  left: 20px;
-  z-index: 1000;
-  background: #0e0e0e;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 12px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  bottom: 140px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .reopen-areas-modal-btn:hover {
-  background: #1a1a1a;
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-1px);
+  transform: scale(1.1);
 }
 
-.reopen-areas-modal-btn i {
-  font-size: 16px;
-}
-
-/* Media queries para responsive */
 @media (max-width: 1024px) {
-  .common-areas-modal:not(.mobile-modal) {
-    display: none;
-  }
-}
-
-@media (min-width: 1025px) {
-  .mobile-modal {
-    display: none;
-  }
-
-  .reopen-areas-modal-btn {
-    display: none;
+  .common-areas-modal {
+    top: auto;
+    bottom: 24px;
+    right: 24px;
+    left: 24px;
+    width: auto;
+    max-width: 480px;
+    margin: 0 auto;
   }
 }
