@@ -428,9 +428,9 @@ async function loadLotesData() {
     });
 
     // Add Mykonos marker
-    const referencePoint =
-      window.Cesium.BoundingSphere.fromPoints(lotesPositions).center;
+    const referencePoint = window.Cesium.Cartesian3.fromDegrees(-71.51364042644347, -17.257430143234867);
     const MAX_DISTANCE = 550;
+    const MARKER_SHOW_DISTANCE = 10300;
     const mykonosMarker = viewer.entities.add({
       id: "mykonos_marker",
       name: "Mykonos",
@@ -481,8 +481,8 @@ async function loadLotesData() {
 
       // Control Mykonos marker visibility
       if (mykonosMarker && mykonosMarker.billboard) {
-        // Show Mykonos only when you are far away (>=550m, same distance where labels disappear)
-        mykonosMarker.billboard.show = distance >= MAX_DISTANCE;
+        // Show Mykonos only when you are far away (>=10200m)
+        mykonosMarker.billboard.show = distance > MARKER_SHOW_DISTANCE;
       }
 
       // Control visibility of all markers except environment
@@ -492,6 +492,7 @@ async function loadLotesData() {
         if (
           entity.id &&
           !entity.id.startsWith("marcador_entorno_") &&
+          !entity.id.startsWith("marcador_foto_") &&
           entity.id !== "mykonos_marker" &&
           entity.billboard
         ) {
