@@ -2507,14 +2507,18 @@ function goHome() {
 }
 
 function view3D() {
-  const boundingSphere =
-    window.Cesium.BoundingSphere.fromPoints(lotesPositions);
-  viewer.camera.flyToBoundingSphere(boundingSphere, {
-    offset: new window.Cesium.HeadingPitchRange(
-      window.Cesium.Math.toRadians(0.0),
-      window.Cesium.Math.toRadians(-15.0),
-      boundingSphere.radius * 3
+  viewer.camera.flyTo({
+    destination: new window.Cesium.Cartesian3(
+      1932445.7816559705,
+      -5778028.29796722,
+      -1887993.652004142
     ),
+    orientation: {
+      heading: 6.283185307179582,
+      pitch: -0.2728361832211268,
+      roll: 6.2831853071795605,
+    },
+    duration: 2.0,
   });
 }
 
