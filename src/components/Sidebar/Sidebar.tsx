@@ -214,7 +214,7 @@ const Sidebar = () => {
               <button className="w-10 h-10 flex items-center justify-center bg-primary-container text-on-primary rounded-lg transition-all shadow-[0_0_15px_rgba(197,160,89,0.4)]" title="3D View" onClick={() => handleCamera('view3d')}>
                 <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: '"FILL" 1' }}>3d_rotation</span>
               </button>
-              <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Grid" onClick={() => handleCamera('grid')}>
+              <button id="grid" className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Grid" onClick={() => handleCamera('grid')}>
                 <span className="material-symbols-outlined text-xl">grid_on</span>
               </button>
             </div>

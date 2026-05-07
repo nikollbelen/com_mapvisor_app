@@ -2524,6 +2524,7 @@ window.addEventListener('resize', updateLabelsOnResize);
 
 function toggleGrid() {
   const btnGrid = document.getElementById("grid");
+  if (!btnGrid) return;
 
   if (!lotesDataSource) return;
   const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);

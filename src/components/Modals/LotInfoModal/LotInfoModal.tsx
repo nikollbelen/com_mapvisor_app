@@ -4,8 +4,8 @@ import {
   format,
   parse,
   isValid,
-  isBefore,
-  startOfDay,
+  // isBefore,
+  // startOfDay,
 } from "date-fns";
 import jsPDF from 'jspdf';
 import "./LotInfoModal.css";
@@ -343,7 +343,7 @@ const LotInfoModal = ({
   const [userState, setUserState] = useState(currentUser);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [maxDiscount, setMaxDiscount] = useState<number | null>(null);
-  const [discountError, setDiscountError] = useState('');
+  // const [discountError, setDiscountError] = useState('');
   const [quotationNotes, setQuotationNotes] = useState('');
   const sanitizedNotesHtml = useMemo(
     () => sanitizeNotesHtml(quotationNotes),
@@ -444,7 +444,7 @@ const LotInfoModal = ({
   const [schedule, setSchedule] = useState<any[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [dateError, setDateError] = useState<string>("");
-  const [calculatedFinalDate, setCalculatedFinalDate] = useState<string>("");
+  // const [calculatedFinalDate, setCalculatedFinalDate] = useState<string>("");
   // const [savedSchedule, setSavedSchedule] = useState<any[]>([]); // Removed - not needed
   
   // Estados para funcionalidades de botones
@@ -744,6 +744,7 @@ const LotInfoModal = ({
   };
 
   // Función para formatear fechas - acepta múltiples formatos y siempre retorna dd/mm/aaaa
+  /*
   const formatDateInput = (input: string): string => {
     if (!input) return '';
     
@@ -819,6 +820,7 @@ const LotInfoModal = ({
     // Si no se puede formatear correctamente, retornar vacío para invalidar la fecha
     return '';
   };
+  */
 
   const toDateInputValue = (displayDate?: string | null): string => {
     if (!displayDate) return '';
@@ -840,6 +842,7 @@ const LotInfoModal = ({
   };
 
   // Función para obtener la fecha de hoy en formato yyyy-MM-dd para el atributo min
+  /*
   const getTodayDateInput = (): string => {
     const today = new Date();
     const year = today.getFullYear();
@@ -847,8 +850,10 @@ const LotInfoModal = ({
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+  */
 
   // Función para validar fecha según el tipo de item (Separación/Inicial vs Cuotas)
+  /*
   const validateScheduleDate = (
     dateString: string,
     itemName: string
@@ -912,8 +917,10 @@ const LotInfoModal = ({
       return { isValid: false, error: "Error al validar la fecha" };
     }
   };
+  */
 
   // Función para obtener el min/max según el tipo de item
+  /*
   const getDateInputMinMax = (itemName: string): { min?: string; max?: string } => {
     const today = getTodayDateInput();
     
@@ -951,6 +958,7 @@ const LotInfoModal = ({
 
     return { min: today };
   };
+  */
 
   const getFormattedValue = (value: number, type: 'usd' | 'percentage' | 'cuotas', inputId: string) => {
     const isFocused = focusedInputs[inputId];
@@ -995,26 +1003,31 @@ const LotInfoModal = ({
     }
   };
 
+  /*
   const getBasePrice = () => {
     const price = loteData?.precio;
     if (typeof price === 'number') return price;
     const parsed = price ? parseFloat(price) : NaN;
     return !isNaN(parsed) ? parsed : 445000;
   };
+  */
 
+  /*
   const validateDiscountValue = (percentage: number) => {
     if (percentage < 0) {
-      setDiscountError('El descuento no puede ser negativo');
+      // setDiscountError('El descuento no puede ser negativo');
       return false;
     }
     if (maxDiscount !== null && percentage > maxDiscount) {
-      setDiscountError(`El descuento máximo permitido es ${maxDiscount}%`);
+      // setDiscountError(`El descuento máximo permitido es ${maxDiscount}%`);
       return false;
     }
-    setDiscountError('');
+    // setDiscountError('');
     return true;
   };
+  */
 
+  /*
   const applyDiscountFromAmount = (amount: number) => {
     const priceBase = getBasePrice();
     const percentage = priceBase ? (amount / priceBase) * 100 : 0;
@@ -1023,7 +1036,9 @@ const LotInfoModal = ({
     setDiscountPercentage(percentage);
     handleFieldChange("discount");
   };
+  */
 
+  /*
   const applyDiscountFromPercentage = (percentage: number) => {
     if (!validateDiscountValue(percentage)) return;
     const priceBase = getBasePrice();
@@ -1032,7 +1047,9 @@ const LotInfoModal = ({
     setDiscountAmount(amount);
     handleFieldChange("discount");
   };
+  */
 
+  /*
   const handleDiscountChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "amount" | "percentage"
@@ -1047,6 +1064,7 @@ const LotInfoModal = ({
       });
     }
   };
+  */
 
   const handlePaymentMethodChange = (method: string) => {
     setPaymentMethod(method);
@@ -1062,7 +1080,7 @@ const LotInfoModal = ({
     setSchedule([]);
     setNeedsUpdate(false);
     setDateError("");
-    setCalculatedFinalDate("");
+    // setCalculatedFinalDate("");
   };
 
   // Debug: Log when paymentMethod changes
@@ -1172,9 +1190,11 @@ const LotInfoModal = ({
   };
 
   // Función auxiliar para validar porcentajes (máximo 100%)
+  /*
   const validatePercentage = (value: number): number => {
     return roundPercentage(Math.min(Math.max(value, 0), 100));
   };
+  */
 
   const calculateSchedule = () => {
     const finalPrice = (loteData?.precio || 445000) - discountAmount;
@@ -1367,11 +1387,13 @@ const LotInfoModal = ({
 
     // Actualizar fecha final calculada
     if (paymentMethod === "credito_directo" && numberOfInstallments > 0) {
+      /*
       const finalDate = calculateFinalPaymentDate(
         firstPaymentDate,
         numberOfInstallments
       );
-      setCalculatedFinalDate(finalDate);
+      // setCalculatedFinalDate(finalDate);
+      */
     }
   };
 
@@ -1402,6 +1424,7 @@ const LotInfoModal = ({
     }
   };
 
+  /*
   const validateStartDate = (
     dateString: string
   ): { isValid: boolean; error?: string } => {
@@ -1442,7 +1465,9 @@ const LotInfoModal = ({
       return { isValid: false, error: "Error al validar la fecha" };
     }
   };
+  */
 
+  /*
   const calculateFinalPaymentDate = (
     startDate: string,
     numberOfInstallments: number
@@ -1461,6 +1486,7 @@ const LotInfoModal = ({
       return "";
     }
   };
+  */
 
   const generateSchedule = () => {
     // Sincronizar estados superiores desde la tabla para Separación e Inicial
@@ -1531,12 +1557,15 @@ const LotInfoModal = ({
     }
   };
 
+  /*
   const handleFieldChange = (_field?: string) => {
     if (_field) {
       setNeedsUpdate(true);
     }
   };
+  */
 
+  /*
   const handleInstallmentChange = (
     index: number,
     field: "percentage" | "amount",
@@ -1585,7 +1614,9 @@ const LotInfoModal = ({
       setInitial({ amount: syncAmount, percentage: syncPercentage });
     }
   };
+  */
 
+  /*
   const recalculateRemainingInstallments = (
     schedule: any[],
     finalPrice: number
@@ -1655,6 +1686,7 @@ const LotInfoModal = ({
       }
     }
   };
+  */
 
   // Función removida - no se necesita recálculo automático para cuotas no equivalentes
 
@@ -1664,11 +1696,12 @@ const LotInfoModal = ({
     
     // Limpiar errores mientras se escribe
     setDateError("");
-    setCalculatedFinalDate("");
+    // setCalculatedFinalDate("");
     
     setNeedsUpdate(true);
   };
 
+  /*
   const handleDateBlur = (value: string) => {
     const trimmedValue = value.trim();
     // Formatear la fecha cuando se desenfoca
@@ -1686,7 +1719,7 @@ const LotInfoModal = ({
           formattedDate,
           numberOfInstallments
         );
-        setCalculatedFinalDate(finalDate);
+        // setCalculatedFinalDate(finalDate);
 
         // Recalcular fechas de cuotas si ya hay un cronograma
         if (schedule.length > 0) {
@@ -1697,7 +1730,7 @@ const LotInfoModal = ({
           setSchedule(newSchedule);
         }
       } else {
-        setCalculatedFinalDate("");
+        // setCalculatedFinalDate("");
       }
     } else {
       // Si no está completa, limpiar todo y mostrar mensaje descriptivo
@@ -1706,9 +1739,10 @@ const LotInfoModal = ({
       } else {
         setDateError("Ingrese una fecha válida en formato dd/mm/aaaa");
       }
-      setCalculatedFinalDate("");
+      // setCalculatedFinalDate("");
     }
   };
+  */
 
   const handleWhatsAppClick = () => {
     const whatsappUrl = "https://api.whatsapp.com/send/?phone=%2B51972874234&text&type=phone_number&app_absent=0";
@@ -2501,6 +2535,7 @@ const LotInfoModal = ({
     }
   };
 
+  /*
   const handleClearSchedule = () => {
     
     // Resetear todos los estados del cronograma
@@ -2514,9 +2549,10 @@ const LotInfoModal = ({
     setSchedule([]);
     setNeedsUpdate(false);
     setDateError("");
-    setCalculatedFinalDate("");
+    // setCalculatedFinalDate("");
     
   };
+  */
 
   // Funciones para los botones de funcionalidades
   const handlePrint = () => {
@@ -3159,11 +3195,11 @@ const LotInfoModal = ({
                     onFocus={() => handleInputFocus('discount-amount')}
                     onBlur={() => handleDecimalBlur('discount-amount', (amount) => {
                       if (maxDiscount !== null && amount > ((maxDiscount / 100) * (loteData?.precio || 0))) {
-                        setDiscountError(`El descuento máximo es del ${maxDiscount}%`);
+                        // setDiscountError(`El descuento máximo es del ${maxDiscount}%`);
                         setDiscountAmount(0);
                         setDiscountPercentage(0);
                       } else {
-                        setDiscountError('');
+                        // setDiscountError('');
                         setDiscountAmount(amount);
                         const pct = (amount / (loteData?.precio || 1)) * 100;
                         setDiscountPercentage(pct);
