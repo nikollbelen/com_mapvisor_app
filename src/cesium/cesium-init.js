@@ -588,7 +588,7 @@ async function loadLotesData() {
           typeof estadoProp?.getValue === "function"
             ? estadoProp.getValue()
             : estadoProp;
-        const baseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
+        const baseMaterial = getStatusColor(estadoValue).withAlpha(0.6);
 
         // Assign the material and save the base material for restoration
         e.polygon.material = baseMaterial;
@@ -2554,7 +2554,7 @@ function toggleGrid() {
         typeof estadoProp?.getValue === "function"
           ? estadoProp.getValue()
           : estadoProp;
-      e._baseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
+      e._baseMaterial = getStatusColor(estadoValue).withAlpha(0.6);
       if (e !== selected) {
         e.polygon.material = e._baseMaterial;
       }
