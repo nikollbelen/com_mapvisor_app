@@ -130,9 +130,13 @@ const BottomBar = () => {
             <button className="flex flex-col items-center justify-center text-on-surface-variant w-10 h-10 hover:scale-110 transition-transform" onClick={() => handleCamera('view3d')}>
               <span className="material-symbols-outlined text-[20px]">3d_rotation</span>
             </button>
-            {/* Grid */}
-            <button className="flex flex-col items-center justify-center text-on-surface-variant w-10 h-10 hover:scale-110 transition-transform" onClick={() => handleCamera('grid')}>
-              <span className="material-symbols-outlined text-[20px]">grid_view</span>
+            {/* Grid — id="grid" requerido por cesium-init (toggleGrid / selección colorida) */}
+            <button
+              id="grid"
+              className="flex flex-col items-center justify-center text-on-surface-variant w-10 h-10 hover:scale-110 transition-transform [&.active]:text-primary"
+              onClick={() => handleCamera('grid')}
+            >
+              <span className="material-symbols-outlined text-[20px]">grid_on</span>
             </button>
           </nav>
 

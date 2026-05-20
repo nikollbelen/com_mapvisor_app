@@ -145,6 +145,15 @@
       box-shadow: 0 0 15px rgba(197, 160, 89, 0.5);
     }
 
+    /* Móvil: paneles glass más opacos (legibilidad sin perder blur) */
+    @media (max-width: 1024px) {
+      .hud-glass-panel {
+        background: rgba(14, 16, 16, 0.94);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+      }
+    }
+
   </style>
 </head>
 

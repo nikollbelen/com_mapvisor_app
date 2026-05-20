@@ -61,6 +61,7 @@ declare global {
     loteClickHandler?: any;
     setTimeOfDay?: (hour: number) => void;
     viewer?: any;
+    mapViewerMode?: "lotes" | "fotos" | "areas" | "entorno" | "video";
     getId?: (entity: any) => string | undefined;
     getDireccion?: (entity: any) => string | undefined;
     getArea?: (entity: any) => number | undefined;

@@ -5,6 +5,7 @@ import type { TopbarButtonId } from '../../types/auth';
 import AdminUiPanel from '../AdminUiPanel/AdminUiPanel';
 import LoginModal from '../Modals/LoginModal/LoginModal';
 import UserInfoModal from '../Modals/UserInfoModal/UserInfoModal';
+import './Sidebar.css';
 
 const Sidebar = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -43,29 +44,47 @@ const Sidebar = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  useEffect(() => {
+    if (!isMobile) return;
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMenuOpen, isMobile]);
+
   // Sincronizar estado de React con eventos globales
   useEffect(() => {
-    const handleClearState = () => {
-      if (!isLoginModalOpen && !isUserInfoModalOpen) {
+    const syncActiveItemFromMapMode = (event?: Event) => {
+      const mode =
+        (event as CustomEvent<{ mode?: string }> | undefined)?.detail?.mode ??
+        window.mapViewerMode;
+      if (isLoginModalOpen || isUserInfoModalOpen) return;
+      if (mode === "lotes") {
         setActiveItem(null);
+        return;
+      }
+      if (["fotos", "areas", "entorno", "video"].includes(mode ?? "")) {
+        setActiveItem(mode!);
       }
     };
 
-    const handleSearchModalOpen = () => setActiveItem('lotes');
+    const handleSearchModalOpen = () => setActiveItem("lotes");
 
     const handleOpenLoginModal = () => {
       setIsLoginModalOpen(true);
       setActiveItem('usuario');
     };
 
-    window.addEventListener('clearAllModals', handleClearState);
-    window.addEventListener('reiniciarMenu', handleClearState);
+    window.addEventListener('mapViewerModeChanged', syncActiveItemFromMapMode);
     window.addEventListener('openLotSearchModal', handleSearchModalOpen);
     window.addEventListener('openLoginModal', handleOpenLoginModal);
     
     return () => {
-      window.removeEventListener('clearAllModals', handleClearState);
-      window.removeEventListener('reiniciarMenu', handleClearState);
+      window.removeEventListener('mapViewerModeChanged', syncActiveItemFromMapMode);
       window.removeEventListener('openLotSearchModal', handleSearchModalOpen);
       window.removeEventListener('openLoginModal', handleOpenLoginModal);
     };
@@ -130,13 +149,11 @@ const Sidebar = () => {
     const isCurrentlyActive = activeItem === itemId;
 
     if (isCurrentlyActive) {
-      setActiveItem(null);
       if (window.reiniciarMenu) window.reiniciarMenu();
       if (isMobile) setIsMenuOpen(false);
       return;
     }
 
-    setActiveItem(itemId);
     if (isMobile) setIsMenuOpen(false);
 
     switch (itemId) {
@@ -161,11 +178,8 @@ const Sidebar = () => {
     }
   };
 
-  // Active button class helper for horizontal top nav
   const navBtnClass = (id: string) =>
-    activeItem === id
-      ? "flex flex-col items-center justify-center w-20 h-16 rounded-xl text-primary bg-surface-container-highest/60 border border-primary/40 group hud-gold-glow transition-all duration-300 scale-105"
-      : "flex flex-col items-center justify-center w-20 h-16 rounded-xl text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high transition-all duration-300";
+    `topbar-nav-btn${activeItem === id ? " topbar-nav-btn--active" : ""}`;
 
   // Icon fill for active
   const navIconStyle = (id: string) =>
@@ -291,80 +305,84 @@ const Sidebar = () => {
       {/* Exact copy from diseñoVertical/menu desplegado */}
       {/* ============================================= */}
       {isMobile && isMenuOpen && (
-        <div className="fixed inset-0 z-[80] bg-surface-container-lowest/80 backdrop-blur-2xl flex flex-col pt-24 px-6 pb-12">
-          {/* Header in Overlay */}
-          <div className="absolute top-0 left-0 w-full flex justify-between items-center px-6 py-4">
+        <div className="mobile-menu-overlay" role="dialog" aria-modal="true" aria-label="Menú principal">
+          <header className="mobile-menu-header">
             <div className="font-h3 text-primary font-extrabold tracking-tight">Lomas de Jesús</div>
             <button
-              className="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-high hud-gold-border shadow-lg active:scale-90 transition-transform"
+              type="button"
+              className="mobile-menu-close"
               onClick={toggleMenu}
+              aria-label="Cerrar menú"
             >
               <span className="material-symbols-outlined text-primary font-bold">close</span>
             </button>
-          </div>
-          {/* Navigation Menu Items */}
-          <div className="flex-1 flex flex-col justify-center space-y-4">
-            {visibleNavItems.map((item) => (
-              <a
-                key={item.id}
-                id={item.id}
-                className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${
-                  activeItem === item.id
-                    ? "bg-white/10 border border-primary/20"
-                    : "bg-white/5 border border-white/10"
-                }`}
-                onClick={() => handleItemClick(item.id)}
-              >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-[28px]">
-                    {item.mobileIcon || item.icon}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-h3 text-on-surface">{item.label}</span>
-                  {item.mobileSubtitle && (
-                    <span className="font-label-caps text-on-surface-variant text-[10px]">
-                      {item.mobileSubtitle}
+          </header>
+
+          <nav className="mobile-menu-scroll">
+            <div className="mobile-menu-list">
+              {visibleNavItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  id={item.id}
+                  className={`mobile-menu-item ${activeItem === item.id ? "active" : ""}`}
+                  onClick={() => handleItemClick(item.id)}
+                >
+                  <div className="mobile-menu-item-icon">
+                    <span className="material-symbols-outlined">
+                      {item.mobileIcon || item.icon}
                     </span>
-                  )}
-                </div>
-              </a>
-            ))}
-            {isAdmin && (
-              <a
-                className="group flex items-center gap-5 p-5 rounded-2xl bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:translate-x-2"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsAdminUiPanelOpen(true);
-                }}
+                  </div>
+                  <div className="mobile-menu-item-text">
+                    <span className="mobile-menu-item-title">{item.label}</span>
+                    {item.mobileSubtitle && (
+                      <span className="mobile-menu-item-subtitle">{item.mobileSubtitle}</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsAdminUiPanelOpen(true);
+                  }}
+                >
+                  <div className="mobile-menu-item-icon mobile-menu-item-icon--admin">
+                    <span className="material-symbols-outlined">tune</span>
+                  </div>
+                  <div className="mobile-menu-item-text">
+                    <span className="mobile-menu-item-title">Configurar vista</span>
+                    <span className="mobile-menu-item-subtitle">ADMINISTRADOR</span>
+                  </div>
+                </button>
+              )}
+              <button
+                type="button"
+                className="mobile-menu-item mobile-menu-item--user"
+                onClick={() => handleItemClick("usuario")}
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-[28px]">tune</span>
+                <div className="mobile-menu-item-icon mobile-menu-item-icon--user">
+                  <span className="material-symbols-outlined">person</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-h3 text-on-surface">Configurar vista</span>
-                  <span className="font-label-caps text-on-surface-variant text-[10px]">ADMINISTRADOR</span>
+                <div className="mobile-menu-item-text">
+                  <span className="mobile-menu-item-title mobile-menu-item-title--gold">
+                    {user ? user.full_name : "Usuario"}
+                  </span>
+                  <span className="mobile-menu-item-subtitle">MI CUENTA</span>
                 </div>
-              </a>
-            )}
-            {/* Usuario */}
-            <a className="group flex items-center gap-5 p-5 rounded-2xl bg-primary-container/20 hud-gold-border transition-all hover:bg-primary-container/30 hover:translate-x-2" onClick={() => handleItemClick('usuario')}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary text-on-primary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">person</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-h3 text-primary">{user ? user.full_name : 'Usuario'}</span>
-                <span className="font-label-caps text-primary/70 text-[10px]">MI CUENTA</span>
-              </div>
-            </a>
-          </div>
-          {/* Footer CTA in Overlay */}
-          <div className="mt-8">
-            <button className="w-full py-5 rounded-2xl hud-gold-gradient-bg text-on-primary font-bold text-lg shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 active:scale-95 transition-all">
+              </button>
+            </div>
+          </nav>
+
+          <footer className="mobile-menu-footer">
+            <button type="button" className="mobile-menu-brochure">
               <span className="material-symbols-outlined">download</span>
               Descargar Brochure
             </button>
-          </div>
+          </footer>
         </div>
       )}
 

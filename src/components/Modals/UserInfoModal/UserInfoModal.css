@@ -229,9 +229,24 @@
   font-size: 20px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
+  .user-info-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
   .user-info-modal {
     max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px)));
+    overflow-y: auto;
+    background: rgba(12, 14, 14, 0.96);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
   }
 
   .user-info-hero {

@@ -207,11 +207,28 @@
 @media (max-width: 1024px) {
   .around-modal {
     top: auto;
-    bottom: 24px;
-    right: 24px;
-    left: 24px;
+    bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    left: 16px;
     width: auto;
     max-width: 480px;
     margin: 0 auto;
+    max-height: min(70dvh, calc(100dvh - 120px));
+    overflow: hidden;
+    background: rgba(12, 14, 14, 0.96);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+  }
+
+  .around-modal.mobile-modal {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .around-modal-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

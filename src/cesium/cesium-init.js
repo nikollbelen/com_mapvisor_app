@@ -24,6 +24,20 @@ bloom.enabled = false; // Desactivado para no quemar el mapa. El brillo se emula
 // Asignar viewer a window para acceso global
 window.viewer = viewer;
 
+// Modo activo del visor (fuente de verdad; no depender de clases DOM por re-renders de React)
+window.mapViewerMode = "lotes";
+
+function setMapViewerMode(mode) {
+  window.mapViewerMode = mode;
+  window.dispatchEvent(
+    new CustomEvent("mapViewerModeChanged", { detail: { mode } })
+  );
+}
+
+function isLotSelectionBlocked() {
+  return window.mapViewerMode === "fotos" || window.mapViewerMode === "areas";
+}
+
 // Deshabilitar el comportamiento de doble clic que hace zoom/enfoque automático
 viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(window.Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
@@ -39,6 +53,41 @@ let highlightedMarcador = null;
 let highlightedMarcadorOriginalScale = null;
 let selected = null;
 let selectedOriginalMaterial = null;
+/** Cuadrícula colorida activa por defecto (los polígonos cargan con colores de estado). */
+let lotGridActive = true;
+
+function isLotGridActive() {
+  const btnGrid = document.getElementById("grid");
+  if (btnGrid) return btnGrid.classList.contains("active");
+  return lotGridActive;
+}
+
+function setLotGridActive(active) {
+  lotGridActive = !!active;
+  const btnGrid = document.getElementById("grid");
+  if (!btnGrid) return;
+  if (lotGridActive) btnGrid.classList.add("active");
+  else btnGrid.classList.remove("active");
+}
+
+/** Resalte de parcela seleccionada: siempre color de estado (no blanco transparente). */
+function applySelectedLotMaterial(entity) {
+  if (!entity?.polygon) return;
+  const estadoProp = entity.properties?.estado;
+  const estadoValue =
+    typeof estadoProp?.getValue === "function"
+      ? estadoProp.getValue()
+      : estadoProp;
+  entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.82);
+  if (entity.polyline) {
+    entity.polyline.show = true;
+    entity.polyline.width = 5;
+    entity.polyline.material = createGlowMaterial(
+      getStatusGlowColor(estadoValue),
+      0.45
+    );
+  }
+}
 
 // Functions to detect device type and adjust label properties
 function getDeviceType() {
@@ -772,10 +821,8 @@ function updateLotFromWebSocket(lotData) {
         }
 
         // Actualizar el color del borde brillante (polyline) según la cuadrícula
-        const btnGrid = document.getElementById("grid");
-        const isGridActive = btnGrid && btnGrid.classList.contains("active");
         if (entity.polyline) {
-          entity.polyline.material = isGridActive ? createGlowMaterial(getStatusGlowColor(mapped.estado), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
+          entity.polyline.material = isLotGridActive() ? createGlowMaterial(getStatusGlowColor(mapped.estado), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
         }
 
         console.log(`[WebSocket] Entidad Cesium actualizada: fid=${fidKey}`);
@@ -881,13 +928,10 @@ function setupLoteInteractions() {
   );
   window.loteClickHandler = handler; // Store reference globally
 
-  // Add active class to grid button since grid is active/colorful by default
+  // Grid colorido activo por defecto (coincide con materiales al cargar lotes)
   setTimeout(() => {
-    const btnGrid = document.getElementById("grid");
-    if (btnGrid) {
-      btnGrid.classList.add("active");
-      console.log("🎯 [setupLoteInteractions] Grid button marked active by default to match colorful map.");
-    }
+    setLotGridActive(true);
+    console.log("🎯 [setupLoteInteractions] Grid mode active by default (colorful lots).");
   }, 100);
 
   // Helper functions
@@ -1029,8 +1073,6 @@ function setupLoteInteractions() {
   let highlighted = null;
   let highlightedOriginalMaterial = null;
 
-  const getBtnGrid = () => document.getElementById("grid");
-
   // Hover interaction
   handler.setInputAction((movement) => {
     // 1) Quick attempt with drillPick
@@ -1082,8 +1124,7 @@ function setupLoteInteractions() {
                 : estadoProp;
 
             // Efecto Hover: Resplandor más fuerte
-            const activeGridBtn = getBtnGrid();
-            const gridActive = activeGridBtn && activeGridBtn.classList.contains("active");
+            const gridActive = isLotGridActive();
             
             console.log("🔍 [Hover Enter] Entity ID:", entity.id);
             console.log("   - Estado:", estadoValue);
@@ -1115,10 +1156,8 @@ function setupLoteInteractions() {
 
   // Click interaction
   handler.setInputAction((click) => {
-    // Bloquear selección de lotes solo si estamos en modos con marcadores (Fotos o Áreas)
-    // para evitar clics accidentales detrás de los marcadores.
-    if (document.getElementById("fotos")?.classList.contains("active") ||
-      document.getElementById("areas")?.classList.contains("active")) {
+    // Bloquear selección de lotes en modos Fotos 360 y Áreas comunes
+    if (isLotSelectionBlocked()) {
       return;
     }
 
@@ -1165,32 +1204,12 @@ function setupLoteInteractions() {
       return;
     }
 
-    // Primero limpiar todo (botones, marcadores, modales, rutas)
-    reiniciarMenu();
+    clearModalsForLotSelection();
+    setMapViewerMode("lotes");
 
-    // Select new entity
     selected = entity;
     selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
-
-    // Actualizar efecto al seleccionar (usar el mismo color que en hover)
-    const activeGridBtn = getBtnGrid();
-    const gridActive = activeGridBtn && activeGridBtn.classList.contains("active");
-
-    const estadoProp = entity.properties?.estado;
-    const estadoValue =
-      typeof estadoProp?.getValue === "function"
-        ? estadoProp.getValue()
-        : estadoProp;
-
-    if (gridActive) {
-      entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.7);
-      if (entity.polyline) {
-        entity.polyline.width = 2;
-        entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.35);
-      }
-    } else {
-      entity.polygon.material = modeSelected.withAlpha(0.2);
-    }
+    applySelectedLotMaterial(entity);
 
     viewer.scene.requestRender();
 
@@ -1440,24 +1459,57 @@ function hoverMarcadores() {
   }, window.Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 }
 
-// Sidebar
-
-function reiniciarMenu() {
-  // Mostrar etiquetas de lotes por defecto al reiniciar (vista estándar)
+/** Cierra modales/marcadores al elegir un lote, sin resetear selección ni mover la cámara. */
+function clearModalsForLotSelection() {
   window.showLoteLabels = true;
 
-  // Remove active classes from all sidebar buttons
-  const fotosBtn = document.getElementById("fotos");
-  const areasBtn = document.getElementById("areas");
-  const lotesBtn = document.getElementById("lotes");
-  const entornoBtn = document.getElementById("entorno");
-  const videoBtn = document.getElementById("video");
+  const modalOverlay = document.getElementById("modalOverlay");
+  const overlay360 = document.getElementById("overlay360");
+  const commonAreasModalOverlay = document.getElementById(
+    "commonAreasModalOverlay"
+  );
+  const lotSearchModalOverlay = document.getElementById(
+    "lotSearchModalOverlay"
+  );
+  const aroundButtonsContainer = document.getElementById(
+    "aroundButtonsContainer"
+  );
+  const aroundModalOverlay = document.getElementById("aroundModalOverlay");
 
-  if (fotosBtn) fotosBtn.classList.remove("active");
-  if (areasBtn) areasBtn.classList.remove("active");
-  if (lotesBtn) lotesBtn.classList.remove("active");
-  if (entornoBtn) entornoBtn.classList.remove("active");
-  if (videoBtn) videoBtn.classList.remove("active");
+  if (modalOverlay && modalOverlay.classList.contains("show")) {
+    modalOverlay.classList.remove("show");
+    modalOverlay.classList.add("hide");
+    setTimeout(() => {
+      if (modalOverlay.classList.contains("hide")) {
+        modalOverlay.style.display = "none";
+      }
+    }, 400);
+  }
+  if (overlay360) overlay360.style.display = "none";
+  if (commonAreasModalOverlay) commonAreasModalOverlay.style.display = "none";
+  if (lotSearchModalOverlay) lotSearchModalOverlay.style.display = "none";
+  if (aroundButtonsContainer) aroundButtonsContainer.style.display = "none";
+  if (aroundModalOverlay) aroundModalOverlay.style.display = "none";
+
+  if (viewer) {
+    const allEntitiesToRemove = viewer.entities.values.filter(
+      (entity) =>
+        entity.id &&
+        (entity.id.startsWith("marcador_foto_") ||
+          entity.id.startsWith("area_comun_") ||
+          entity.id.startsWith("marcador_entorno_"))
+    );
+    allEntitiesToRemove.forEach((entity) => viewer.entities.remove(entity));
+  }
+
+  clearRoute();
+  window.dispatchEvent(new CustomEvent("clearAllModals"));
+}
+
+// Sidebar — limpiar mapa/modales sin cambiar el modo del menú (evita parpadeo al activar Fotos/Áreas/etc.)
+function clearViewerModeState() {
+  // Mostrar etiquetas de lotes por defecto al reiniciar (vista estándar)
+  window.showLoteLabels = true;
 
   // Hide all modals and overlays
   const modalOverlay = document.getElementById("modalOverlay");
@@ -1521,21 +1573,21 @@ function reiniciarMenu() {
 
   // Return to lots view
   flyToLotesView();
+}
 
-  // Dispatch event to reset sidebar state in React
+function reiniciarMenu() {
+  clearViewerModeState();
+  setMapViewerMode("lotes");
   window.dispatchEvent(new CustomEvent("reiniciarMenu"));
 }
 
 // Fotos 360°
 
 async function handleFotos() {
-  reiniciarMenu();
+  clearViewerModeState();
+  setMapViewerMode("fotos");
   // Ocultar etiquetas de lotes en este modo
   window.showLoteLabels = false;
-
-  // Activate photos button
-  const fotosBtn = document.getElementById("fotos");
-  if (fotosBtn) fotosBtn.classList.add("active");
 
   try {
     const response = await fetch("./data/fotos.geojson");
@@ -1639,13 +1691,10 @@ function closeOverlay360() {
 // Áreas comunes
 
 async function handleAreasComunes() {
-  reiniciarMenu();
+  clearViewerModeState();
+  setMapViewerMode("areas");
   // Ocultar etiquetas de lotes en este modo
   window.showLoteLabels = false;
-
-  // Activate areas button
-  const areasBtn = document.getElementById("areas");
-  if (areasBtn) areasBtn.classList.add("active");
 
   let areasData = null;
 
@@ -1865,14 +1914,11 @@ window.setLotRangeConfig = function (config = {}) {
 };
 
 function handleLotes() {
-  reiniciarMenu();
+  clearViewerModeState();
+  setMapViewerMode("lotes");
 
   // Activar etiquetas de lotes en este modo
   window.showLoteLabels = true;
-
-  // Activate lots button
-  const lotesBtn = document.getElementById("lotes");
-  if (lotesBtn) lotesBtn.classList.add("active");
 
   // Volar a la vista de lotes
   flyToLotesView();
@@ -1972,7 +2018,8 @@ function renderLotCards(lots) {
 }
 
 window.handleLotCardClick = function (lotNumber) {
-  reiniciarMenu();
+  clearModalsForLotSelection();
+  setMapViewerMode("lotes");
 
   // Buscar la entidad del lote en el datasource de Cesium
   const allEntities = viewer.dataSources.get(0).entities.values;
@@ -2019,7 +2066,7 @@ window.handleLotCardClick = function (lotNumber) {
     selected = lotEntity;
     selectedOriginalMaterial =
       lotEntity._baseMaterial || lotEntity.polygon.material;
-    lotEntity.polygon.material = modeSelected;
+    applySelectedLotMaterial(lotEntity);
 
     // Volar hacia el lote
     viewer.flyTo(lotEntity, {
@@ -2094,13 +2141,10 @@ function loadLotData() {
 // Entorno
 
 async function handleEntorno() {
-  reiniciarMenu();
+  clearViewerModeState();
+  setMapViewerMode("entorno");
   // Ocultar etiquetas de lotes en este modo
   window.showLoteLabels = false;
-
-  // Activate environment button
-  const entornoBtn = document.getElementById("entorno");
-  if (entornoBtn) entornoBtn.classList.add("active");
 
   // Ensure button container is visible
   const aroundButtonsContainer = document.getElementById(
@@ -2451,11 +2495,8 @@ function updateEntornoButtonsState(activeType) {
 // Video
 
 function handleVideo() {
-  reiniciarMenu();
-
-  // Activate video button
-  const videoBtn = document.getElementById("video");
-  if (videoBtn) videoBtn.classList.add("active");
+  clearViewerModeState();
+  setMapViewerMode("video");
 
   // Dispatch event to show video overlay
   window.dispatchEvent(new CustomEvent("openVideoOverlay"));
@@ -2483,37 +2524,17 @@ function closeVideoOverlay() {
 // Función para seleccionar un lote por entidad (usada desde URL highlight)
 function selectLotByEntity(entity) {
   if (!entity || !entity.polygon) return;
+  if (isLotSelectionBlocked()) return;
 
   const fid = getFid(entity);
   if (fid === undefined) return;
 
-  // Primero limpiar todo (botones, marcadores, modales, rutas)
-  reiniciarMenu();
+  clearModalsForLotSelection();
+  setMapViewerMode("lotes");
 
-  // Select new entity
   selected = entity;
   selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
-
-  const btnGrid = document.getElementById("grid");
-  if (btnGrid && btnGrid.classList.contains("active")) {
-    const estadoProp = entity.properties?.estado;
-    const estadoValue =
-      typeof estadoProp?.getValue === "function"
-        ? estadoProp.getValue()
-        : estadoProp;
-    entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.85);
-    if (entity.polyline) {
-      entity.polyline.width = 6;
-      entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.3);
-    }
-  } else {
-    entity.polygon.material = modeSelected.withAlpha(0);
-    if (entity.polyline) {
-      entity.polyline.show = true;
-      entity.polyline.width = 6;
-      entity.polyline.material = createGlowMaterial(window.Cesium.Color.fromCssColorString("#FFFFFF"), 0.3);
-    }
-  }
+  applySelectedLotMaterial(entity);
 
   viewer.scene.requestRender();
 
@@ -2686,14 +2707,11 @@ function updateLabelsOnResize() {
 window.addEventListener('resize', updateLabelsOnResize);
 
 function toggleGrid() {
-  const btnGrid = document.getElementById("grid");
-  if (!btnGrid) return;
-
   if (!lotesDataSource) return;
   const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);
   
   // If it currently has active class, it means we are turning it OFF
-  const willBeActive = !btnGrid.classList.contains("active");
+  const willBeActive = !isLotGridActive();
   console.log("🔄 [toggleGrid] Toggling grid active class. Grid will be active:", willBeActive);
 
   entitiesAll.forEach((e) => {
@@ -2731,11 +2749,7 @@ function toggleGrid() {
     }
   });
 
-  if (willBeActive) {
-    btnGrid.classList.add("active");
-  } else {
-    btnGrid.classList.remove("active");
-  }
+  setLotGridActive(willBeActive);
 
   if (viewer) viewer.scene.requestRender();
 }

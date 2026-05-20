@@ -83,17 +83,14 @@ const Instructions = ({ onClose }: InstructionsProps) => {
         /* ============================================= */
         /* MOBILE LAYOUT (diseñoVertical/code.html)     */
         /* ============================================= */
-        <main className="relative z-10 flex flex-col items-center justify-center min-h-screen p-container-padding w-full h-full">
-          <div className="instructions-glass-panel instructions-inner-glow rounded-xl p-8 w-full max-w-sm shadow-2xl space-y-10 bg-surface-container/90">
-            {/* Header Section */}
-            <div className="text-center space-y-2">
+        <main className="instructions-mobile-main">
+          <div className="instructions-glass-panel instructions-inner-glow instructions-mobile-panel rounded-xl w-full shadow-2xl bg-surface-container/90">
+            <div className="instructions-mobile-header">
               <h1 className="font-h1 text-h1 text-primary">¿Cómo navegar?</h1>
               <p className="font-body-md text-on-surface-variant">Explora cada rincón de Lomas de Jesús con total fluidez.</p>
             </div>
-            {/* Gesture Grid (2x2) */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Gesture Card 1 */}
-              <div className="bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
+            <div className="instructions-mobile-gestures">
+              <div className="instructions-mobile-gesture-card bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
                 <div className="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary text-3xl">swipe</span>
                 </div>
@@ -102,8 +99,7 @@ const Instructions = ({ onClose }: InstructionsProps) => {
                   <p className="font-h3 text-body-md text-on-surface">Rotar</p>
                 </div>
               </div>
-              {/* Gesture Card 2 */}
-              <div className="bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
+              <div className="instructions-mobile-gesture-card bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
                 <div className="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary text-3xl">pinch</span>
                 </div>
@@ -112,8 +108,7 @@ const Instructions = ({ onClose }: InstructionsProps) => {
                   <p className="font-h3 text-body-md text-on-surface">Zoom</p>
                 </div>
               </div>
-              {/* Gesture Card 3 */}
-              <div className="bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
+              <div className="instructions-mobile-gesture-card bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
                 <div className="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary text-3xl">pan_tool</span>
                 </div>
@@ -122,8 +117,7 @@ const Instructions = ({ onClose }: InstructionsProps) => {
                   <p className="font-h3 text-body-md text-on-surface">Desplazar</p>
                 </div>
               </div>
-              {/* Gesture Card 4 */}
-              <div className="bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
+              <div className="instructions-mobile-gesture-card bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">
                 <div className="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary text-3xl">ads_click</span>
                 </div>

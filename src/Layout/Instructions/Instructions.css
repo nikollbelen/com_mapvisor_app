@@ -73,3 +73,85 @@
 .instructions-main-overlay .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 }
+
+/* ---- Mobile (≤1024px, layout vertical) ---- */
+.instructions-mobile-main {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(16px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.instructions-mobile-panel {
+  width: 100%;
+  max-width: min(400px, 100%);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.instructions-mobile-panel .instructions-mobile-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instructions-mobile-gestures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.instructions-mobile-gesture-card {
+  min-width: 0;
+}
+
+.instructions-mobile-gesture-card p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 1024px) {
+  .instructions-main-overlay {
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    background-color: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .instructions-mobile-panel {
+    background: rgba(14, 16, 16, 0.96) !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .instructions-mobile-panel {
+    padding: 16px 12px;
+    gap: 20px;
+  }
+
+  .instructions-mobile-gestures {
+    gap: 8px;
+  }
+
+  .instructions-mobile-gesture-card {
+    padding: 12px 8px !important;
+  }
+}

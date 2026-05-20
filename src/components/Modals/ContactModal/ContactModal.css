@@ -350,10 +350,25 @@
 }
 
 /* Responsive específico para ContactModal */
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
+  .contact-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
   .contact-modal {
-    width: 95%;
-    margin: 20px;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(90dvh, calc(100dvh - env(safe-area-inset-top, 0px)));
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    background: rgba(12, 14, 14, 0.96);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
   }
   
   .contact-modal-header,
