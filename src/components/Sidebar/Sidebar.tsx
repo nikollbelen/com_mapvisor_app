@@ -79,14 +79,21 @@ const Sidebar = () => {
       setActiveItem('usuario');
     };
 
+    const handleReiniciarMenu = () => {
+      if (isLoginModalOpen || isUserInfoModalOpen) return;
+      setActiveItem(null);
+    };
+
     window.addEventListener('mapViewerModeChanged', syncActiveItemFromMapMode);
     window.addEventListener('openLotSearchModal', handleSearchModalOpen);
     window.addEventListener('openLoginModal', handleOpenLoginModal);
+    window.addEventListener('reiniciarMenu', handleReiniciarMenu);
     
     return () => {
       window.removeEventListener('mapViewerModeChanged', syncActiveItemFromMapMode);
       window.removeEventListener('openLotSearchModal', handleSearchModalOpen);
       window.removeEventListener('openLoginModal', handleOpenLoginModal);
+      window.removeEventListener('reiniciarMenu', handleReiniciarMenu);
     };
   }, [isLoginModalOpen, isUserInfoModalOpen]);
 

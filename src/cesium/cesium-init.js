@@ -2507,21 +2507,14 @@ function handleVideo() {
 
 // Function to close video
 function closeVideoOverlay() {
-  // Pause and reset video if exists
   const video = document.getElementById("videoPlayer");
   if (video) {
     video.pause();
     video.currentTime = 0;
   }
 
-  // Deactivate video button
-  const videoBtn = document.getElementById("video");
-  if (videoBtn) {
-    videoBtn.classList.remove("active");
-  }
-
-  // Dispatch event to reset sidebar state in React
-  window.dispatchEvent(new CustomEvent("reiniciarMenu"));
+  // Desactivar botón Video en topbar/menú móvil (estado React vía mapViewerModeChanged)
+  setMapViewerMode("lotes");
 }
 
 // Función para seleccionar un lote por entidad (usada desde URL highlight)

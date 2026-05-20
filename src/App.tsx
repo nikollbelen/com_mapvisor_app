@@ -160,10 +160,7 @@ function AppContent() {
   };
 
   const handleCloseVideoOverlay = () => {
-    // Primero ocultar el overlay
     setShowVideoOverlay(false);
-
-    // Llamar a la función de JavaScript para desactivar el botón y reiniciar
     if (window.closeVideoOverlay) {
       window.closeVideoOverlay();
     }
@@ -179,6 +176,9 @@ function AppContent() {
     setShowEntornoModal(false);
     setEntornoModalMinimized(false);
     setShowVideoOverlay(false);
+    if (window.mapViewerMode === "video" && window.closeVideoOverlay) {
+      window.closeVideoOverlay();
+    }
     setPhotos360Src("");
     setAreasImageSrc("");
     setAreasData(null);

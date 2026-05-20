@@ -39,17 +39,11 @@ const VideoOverlay = ({
   }, [isVisible]);
 
   const handleClose = () => {
-    
-    // Pausar el video inmediatamente
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
-    
-    // Cerrar después de la animación
-    setTimeout(() => {
-      onClose?.();
-    }, 400); // Tiempo de la animación de salida
+    onClose?.();
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
