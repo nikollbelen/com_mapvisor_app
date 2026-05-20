@@ -17,6 +17,10 @@ const viewer = new Cesium.Viewer("cesiumContainer", {
   pickTranslucentDepth: true,
 });
 
+// Activar el efecto Bloom (resplandor) en el viewer para el brillo neón
+const bloom = viewer.scene.postProcessStages.bloom;
+bloom.enabled = false; // Desactivado para no quemar el mapa. El brillo se emulará con un color sólido intenso.
+
 // Asignar viewer a window para acceso global
 window.viewer = viewer;
 
@@ -87,11 +91,11 @@ function getLabelOutlineWidth() {
   }
 }
 
-// Lot colors
-const disponible = window.Cesium.Color.fromCssColorString("#F0E68C"); // Khaki / Pale Yellow
-const reservado = window.Cesium.Color.fromCssColorString("#F08080"); // Light Coral
-const vendido = window.Cesium.Color.fromCssColorString("#87CEFA");    // Light Sky Blue
-const negociacion = window.Cesium.Color.fromCssColorString("#FFB347"); // Pastel Orange
+// Lot colors - Paleta Neón Premium
+const disponible = window.Cesium.Color.fromCssColorString("#CCFF00"); // Verde Neón / Yellow-green
+const reservado = window.Cesium.Color.fromCssColorString("#FF1493");  // Rosa Neón
+const vendido = window.Cesium.Color.fromCssColorString("#00E5FF");    // Celeste / Cian Neón
+const negociacion = window.Cesium.Color.fromCssColorString("#FF5E00"); // Naranja Neón
 const modeSelected = window.Cesium.Color.fromCssColorString("#FFFFFF");
 
 function getStatusColor(status) {
@@ -107,6 +111,38 @@ function getStatusColor(status) {
     default:
       return disponible;
   }
+}
+
+function getStatusGlowColor(status) {
+  const normalizedStatus = (status || "").toString().toLowerCase();
+  switch (normalizedStatus) {
+    case "reservado":
+      return window.Cesium.Color.fromCssColorString("#FF66CC"); // Glow rosa claro
+    case "vendido":
+      return window.Cesium.Color.fromCssColorString("#00FFFF"); // Glow cian puro
+    case "negociacion":
+      return window.Cesium.Color.fromCssColorString("#FF8C00"); // Glow naranja brillante
+    case "disponible":
+    default:
+      return window.Cesium.Color.fromCssColorString("#EEFF55"); // Glow verde-amarillo neón
+  }
+}
+
+function getHDRColor(color, intensity = 5.0) {
+  return new window.Cesium.Color(
+    color.red * intensity,
+    color.green * intensity,
+    color.blue * intensity,
+    color.alpha
+  );
+}
+
+function createGlowMaterial(color, glowPower = 0.5) {
+  return new window.Cesium.PolylineGlowMaterialProperty({
+    glowPower: glowPower,
+    taperPower: 1.0,
+    color: color
+  });
 }
 
 function getStatusLabel(status) {
@@ -246,7 +282,7 @@ async function loadLotesData() {
     ]);
     const data1 = await resp1.json();
     const data2 = await resp2.json();
-    
+
     // Marcar los lotes de la versión 2 para que solo estos sean filtrables
     if (data2.features) {
       data2.features.forEach(f => {
@@ -265,15 +301,15 @@ async function loadLotesData() {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
       const projectId = import.meta.env.VITE_PROJECT_ID;
       const apiUrl = `${apiBaseUrl}/lots/project/${projectId}?limit=1500`;
-      
-      const apiResp = await fetch(apiUrl, { 
+
+      const apiResp = await fetch(apiUrl, {
         method: "GET",
         headers: {
           'Accept': 'application/json',
           'ngrok-skip-browser-warning': 'true'
         }
       });
-      
+
       if (apiResp.ok) {
         const apiJson = await apiResp.json();
         const lots = (apiJson && apiJson.data && Array.isArray(apiJson.data.lots)) ? apiJson.data.lots : [];
@@ -416,7 +452,7 @@ async function loadLotesData() {
             labelCartographic.height + 5.0 // 5m por encima del polígono
           )
         );
- 
+
         // Add a label at the center of the polygon
         const labelEntity = viewer.entities.add({
           position: elevatedLabelPosition,
@@ -438,7 +474,7 @@ async function loadLotesData() {
             // Combinar elevación física con disableDepthTestDistance para asegurar visibilidad
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             scale: getLabelScale(),
-            heightReference: window.Cesium.HeightReference.NONE, 
+            heightReference: window.Cesium.HeightReference.NONE,
             show: (() => {
               const num = entity.properties.number ? entity.properties.number.getValue() : "";
               return !!num && !!lote;
@@ -528,7 +564,7 @@ async function loadLotesData() {
             entity.billboard.show = true;
             if (entity.label) entity.label.show = true;
           }
-        } 
+        }
         // Other markers (except environment and Mykonos)
         else if (
           !entity.id.startsWith("marcador_entorno_") &&
@@ -577,8 +613,10 @@ async function loadLotesData() {
         e.polygon.height = 0.1;
         e.polygon.heightReference =
           window.Cesium.HeightReference.RELATIVE_TO_GROUND;
-        e.polygon.outline = true;
-        e.polygon.outlineColor = window.Cesium.Color.WHITE;
+
+        // Desactivar el outline por defecto de Cesium para que no corte el brillo neón
+        e.polygon.outline = false;
+
         // Configurar polígonos para que no bloqueen los labels
         e.polygon.disableDepthTestDistance = 0; // Los polígonos respetan la profundidad para que los labels estén por encima
 
@@ -588,11 +626,27 @@ async function loadLotesData() {
           typeof estadoProp?.getValue === "function"
             ? estadoProp.getValue()
             : estadoProp;
-        const baseMaterial = getStatusColor(estadoValue).withAlpha(0.6);
+        const baseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
 
         // Assign the material and save the base material for restoration
         e.polygon.material = baseMaterial;
         e._baseMaterial = baseMaterial;
+
+        // Crear el borde brillante (polyline) usando HDR
+        if (e.polygon.hierarchy) {
+          const hierarchy = e.polygon.hierarchy.getValue(window.Cesium.JulianDate.now());
+          const positions = (hierarchy && hierarchy.positions) ? hierarchy.positions : hierarchy;
+
+          if (positions && positions.length > 0) {
+            const closedPositions = [...positions, positions[0]];
+            e.polyline = new window.Cesium.PolylineGraphics({
+              positions: closedPositions,
+              width: 4, // Grosor base del neón
+              material: createGlowMaterial(getStatusGlowColor(estadoValue), 0.25),
+              clampToGround: true // Pegado al terreno
+            });
+          }
+        }
       });
     } catch (err) {
       console.error("Error applying styles to terreno.geojson (by fid):", err);
@@ -629,7 +683,7 @@ function updateLotFromWebSocket(lotData) {
     }
 
     const fidKey = String(lotData.fid);
-    
+
     // 1) Actualizar el Map fidToApiProps
     fidToApiProps.set(fidKey, lotData);
     console.log(`[WebSocket] Lote actualizado en fidToApiProps: fid=${fidKey}`, lotData);
@@ -690,8 +744,8 @@ function updateLotFromWebSocket(lotData) {
       const entity = entities.find((e) => {
         if (!e || !e.properties) return false;
         try {
-          const entityFid = e.properties.fid && e.properties.fid.getValue 
-            ? e.properties.fid.getValue() 
+          const entityFid = e.properties.fid && e.properties.fid.getValue
+            ? e.properties.fid.getValue()
             : e.properties.fid;
           return String(entityFid) === fidKey;
         } catch (e) {
@@ -707,15 +761,25 @@ function updateLotFromWebSocket(lotData) {
         if (entity.properties.precio) entity.properties.precio.setValue(mapped.precio);
         if (entity.properties.estado) entity.properties.estado.setValue(mapped.estado);
 
-        // Actualizar color del polígono según el estado
+        // Actualizar color del polígono y baseMaterial según el estado
         const statusColor = getStatusColor(mapped.estado);
-        if (entity.polygon && entity.polygon.material && statusColor) {
-          // getStatusColor ya devuelve un objeto Cesium.Color, solo necesitamos aplicar el alpha
-          entity.polygon.material = statusColor.withAlpha(0.5);
+        if (entity.polygon && statusColor) {
+          const newBase = statusColor.withAlpha(0.4);
+          entity._baseMaterial = newBase;
+          if (entity !== selected) {
+            entity.polygon.material = newBase;
+          }
+        }
+
+        // Actualizar el color del borde brillante (polyline) según la cuadrícula
+        const btnGrid = document.getElementById("grid");
+        const isGridActive = btnGrid && btnGrid.classList.contains("active");
+        if (entity.polyline) {
+          entity.polyline.material = isGridActive ? createGlowMaterial(getStatusGlowColor(mapped.estado), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
         }
 
         console.log(`[WebSocket] Entidad Cesium actualizada: fid=${fidKey}`);
-        
+
         // 6) Si esta entidad es la que está actualmente seleccionada, disparar evento para actualizar el modal
         if (selected && selected === entity && window.getDireccion && window.getArea && window.getPrecio && window.getEstado && window.getColindancias && window.getId && window.getPhase) {
           // Disparar evento con los datos actualizados del lote
@@ -816,6 +880,15 @@ function setupLoteInteractions() {
     viewer.scene.canvas
   );
   window.loteClickHandler = handler; // Store reference globally
+
+  // Add active class to grid button since grid is active/colorful by default
+  setTimeout(() => {
+    const btnGrid = document.getElementById("grid");
+    if (btnGrid) {
+      btnGrid.classList.add("active");
+      console.log("🎯 [setupLoteInteractions] Grid button marked active by default to match colorful map.");
+    }
+  }, 100);
 
   // Helper functions
   window.getFid = (entity) => {
@@ -956,8 +1029,7 @@ function setupLoteInteractions() {
   let highlighted = null;
   let highlightedOriginalMaterial = null;
 
-  
-  const btnGrid = document.getElementById("grid");
+  const getBtnGrid = () => document.getElementById("grid");
 
   // Hover interaction
   handler.setInputAction((movement) => {
@@ -967,10 +1039,16 @@ function setupLoteInteractions() {
 
     // Restore hover if we moved away or to another entity
     if (highlighted && highlighted !== entity) {
+      console.log("🔍 [Hover Exit] Entity ID:", highlighted.id);
+      console.log("   - Base material to restore:", highlighted._baseMaterial);
+      console.log("   - Is highlighted selected?", highlighted === selected);
+      
       viewer.scene.canvas.style.cursor = "default";
       // Don't touch if it's the selected one
       if (highlighted !== selected) {
         highlighted.polygon.material = highlighted._baseMaterial;
+        // Restaurar grosor de línea al salir
+        if (highlighted.polyline) highlighted.polyline.width = 4;
       }
       highlighted = null;
       highlightedOriginalMaterial = null;
@@ -994,15 +1072,40 @@ function setupLoteInteractions() {
         // Avoid highlighting if already selected
         if (highlighted !== entity && entity !== selected) {
           highlighted = entity;
-          if (btnGrid?.classList.contains("active")) {
+
+          // Efecto Hover: Resplandor más fuerte
+          if (entity !== selected && entity.polygon) {
             const estadoProp = entity.properties?.estado;
             const estadoValue =
               typeof estadoProp?.getValue === "function"
                 ? estadoProp.getValue()
                 : estadoProp;
-            entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.5);
-          } else {
-            entity.polygon.material = modeSelected.withAlpha(0.1);
+
+            // Efecto Hover: Resplandor más fuerte
+            const activeGridBtn = getBtnGrid();
+            const gridActive = activeGridBtn && activeGridBtn.classList.contains("active");
+            
+            console.log("🔍 [Hover Enter] Entity ID:", entity.id);
+            console.log("   - Estado:", estadoValue);
+            console.log("   - Grid Active:", gridActive);
+            console.log("   - Current Polygon Material BEFORE hover:", entity.polygon.material);
+            console.log("   - Entity Base Material (_baseMaterial):", entity._baseMaterial);
+
+            if (gridActive) {
+              const newColor = getStatusColor(estadoValue).withAlpha(0.7);
+              console.log("   - Setting polygon material to status color (alpha 0.7):", newColor);
+              entity.polygon.material = newColor; // Hover brillando
+              if (entity.polyline) {
+                entity.polyline.width = 2; // Borde mucho más delgado en hover
+                entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.35);
+              }
+            } else {
+              const newColor = modeSelected.withAlpha(0.2);
+              console.log("   - Setting polygon material to modeSelected (alpha 0.2):", newColor);
+              entity.polygon.material = newColor; // Hover oscuro
+            }
+            
+            console.log("   - Current Polygon Material AFTER hover:", entity.polygon.material);
           }
           viewer.scene.requestRender();
         }
@@ -1014,8 +1117,8 @@ function setupLoteInteractions() {
   handler.setInputAction((click) => {
     // Bloquear selección de lotes solo si estamos en modos con marcadores (Fotos o Áreas)
     // para evitar clics accidentales detrás de los marcadores.
-    if (document.getElementById("fotos")?.classList.contains("active") || 
-        document.getElementById("areas")?.classList.contains("active")) {
+    if (document.getElementById("fotos")?.classList.contains("active") ||
+      document.getElementById("areas")?.classList.contains("active")) {
       return;
     }
 
@@ -1047,16 +1150,26 @@ function setupLoteInteractions() {
     // Select new entity
     selected = entity;
     selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
-    
-    if (btnGrid?.classList.contains("active")) {
-    const estadoProp = entity.properties?.estado;
-    const estadoValue =
-      typeof estadoProp?.getValue === "function"
-        ? estadoProp.getValue()
-        : estadoProp;
-    entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.5);
+
+    // Actualizar efecto al seleccionar
+    if (btnGrid && btnGrid.classList.contains("active")) {
+      const estadoProp = entity.properties?.estado;
+      const estadoValue =
+        typeof estadoProp?.getValue === "function"
+          ? estadoProp.getValue()
+          : estadoProp;
+      entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.85); // Opacidad máxima al seleccionar
+      if (entity.polyline) {
+        entity.polyline.width = 6; // Más grueso al estar seleccionado
+        entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.3);
+      }
     } else {
       entity.polygon.material = modeSelected.withAlpha(0);
+      if (entity.polyline) {
+        entity.polyline.show = true;
+        entity.polyline.width = 6;
+        entity.polyline.material = createGlowMaterial(window.Cesium.Color.fromCssColorString("#FFFFFF"), 0.3);
+      }
     }
 
     viewer.scene.requestRender();
@@ -1186,7 +1299,7 @@ function addTreeModelAtCenter() {
     const heading = window.Cesium.Math.toRadians(-42); // Rotación horizontal en grados (0 = sin rotación)
     const pitch = window.Cesium.Math.toRadians(0);    // Inclinación vertical en grados (0 = vertical)
     const roll = window.Cesium.Math.toRadians(0);    // Rotación sobre el eje del modelo (0 = sin rotación)
-    
+
     // Configurar desplazamiento del modelo (en metros)
     // forwardOffset: positivo = adelante, negativo = atrás
     // rightOffset: positivo = derecha, negativo = izquierda
@@ -1194,43 +1307,43 @@ function addTreeModelAtCenter() {
     const forwardOffset = -0.97;  // Metros hacia adelante (positivo) o atrás (negativo)
     const rightOffset = -0.03;     // Metros hacia la derecha (positivo) o izquierda (negativo)
     const upOffset = -1;         // Metros hacia arriba (positivo) o abajo (negativo)
-    
+
     // Calcular posición final con offset
     let finalPosition = positionCartesian;
-    
+
     if (forwardOffset !== 0 || rightOffset !== 0 || upOffset !== 0) {
       // Convertir el centro a Cartographic para trabajar con offsets
       const centerCartographic = window.Cesium.Cartographic.fromCartesian(positionCartesian);
-      
+
       // Calcular offsets en latitud y longitud (aproximación para distancias pequeñas)
       // 1 grado de latitud ≈ 111,000 metros
       // 1 grado de longitud ≈ 111,000 * cos(latitud) metros
       const metersPerDegreeLat = 111000;
       const metersPerDegreeLon = 111000 * Math.cos(centerCartographic.latitude);
-      
+
       // Calcular dirección basada en el heading
       const forwardX = Math.sin(heading) * forwardOffset; // Componente Este/Oeste
       const forwardY = Math.cos(heading) * forwardOffset; // Componente Norte/Sur
-      
+
       // Calcular dirección perpendicular (90 grados a la derecha del heading)
       const rightX = Math.cos(heading) * rightOffset;
       const rightY = -Math.sin(heading) * rightOffset;
-      
+
       // Aplicar offsets
       const deltaLat = (forwardY + rightY) / metersPerDegreeLat;
       const deltaLon = (forwardX + rightX) / metersPerDegreeLon;
       const deltaHeight = upOffset;
-      
+
       // Crear nueva posición Cartographic con latitud y longitud
       const newCartographic = new window.Cesium.Cartographic(
         centerCartographic.longitude + deltaLon,
         centerCartographic.latitude + deltaLat,
         0 // Altura inicial en 0
       );
-      
+
       // Convertir a Cartesian3 primero
       finalPosition = window.Cesium.Cartographic.toCartesian(newCartographic);
-      
+
       // Aplicar offset vertical usando el vector "up" (hacia arriba) desde el centro de la Tierra
       if (upOffset !== 0) {
         const upVector = window.Cesium.Cartesian3.normalize(finalPosition, new window.Cesium.Cartesian3());
@@ -1238,11 +1351,11 @@ function addTreeModelAtCenter() {
         finalPosition = window.Cesium.Cartesian3.add(finalPosition, offsetVector, finalPosition);
       }
     }
-    
+
     // Configurar escala del modelo
     // scale: escala general del modelo (1.0 = tamaño original, mayor = más grande)
     const modelScale = 1.01; // Aumentar este valor para hacer el modelo más ancho/grande
-    
+
     const hpr = new window.Cesium.HeadingPitchRoll(heading, pitch, roll);
     const orientation = window.Cesium.Transforms.headingPitchRollQuaternion(
       finalPosition,
@@ -1360,6 +1473,12 @@ function reiniciarMenu() {
   if (selected) {
     const base = selected._baseMaterial || selectedOriginalMaterial;
     if (base) selected.polygon.material = base;
+    if (selected.polyline) {
+      selected.polyline.width = 4; // Restaurar a base
+      const estadoProp = selected.properties?.estado;
+      const estadoValue = typeof estadoProp?.getValue === "function" ? estadoProp.getValue() : estadoProp;
+      selected.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.25);
+    }
   }
   selected = null;
   selectedOriginalMaterial = null;
@@ -1514,7 +1633,7 @@ async function handleAreasComunes() {
     // Cargar datos desde el archivo GeoJSON local
     const response = await fetch("./data/areas.geojson");
     const geojsonData = await response.json();
-    
+
     areasData = geojsonData;
 
     if (areasData && areasData.features) {
@@ -1727,7 +1846,7 @@ window.setLotRangeConfig = function (config = {}) {
 
 function handleLotes() {
   reiniciarMenu();
-  
+
   // Activar etiquetas de lotes en este modo
   window.showLoteLabels = true;
 
@@ -1813,8 +1932,8 @@ function renderLotCards(lots) {
               <div class="lot-card-header">${lot.number}</div>
               <div class="lot-card-separator"></div>
               <div class="lot-card-status ${lot.status}">${getStatusLabel(
-                lot.status
-              )}</div>
+      lot.status
+    )}</div>
               <div class="lot-card-details">
                 <span class="lot-card-label">Precio</span>
                 <span class="lot-card-value">$ ${lot.price.toLocaleString()}</span>
@@ -1823,9 +1942,8 @@ function renderLotCards(lots) {
                 <span class="lot-card-label">Área</span>
                 <span class="lot-card-value">${lot.area.toFixed(2)} m²</span>
               </div>
-              <button class="lot-card-view-more-btn" onclick="handleLotCardClick('${
-                lot.number
-              }')">
+              <button class="lot-card-view-more-btn" onclick="handleLotCardClick('${lot.number
+      }')">
                 Ver más <i class="fas fa-arrow-right"></i>
               </button>
             `;
@@ -1841,10 +1959,10 @@ window.handleLotCardClick = function (lotNumber) {
 
   // Extraer manzana y lote del lot.number
   const lot = lotNumber; // "Mz. E - Lote 15" o "Parcela 1"
-  
+
   let manzana = "";
   let loteNum = "";
-  
+
   if (lot.toLowerCase().startsWith("parcela")) {
     manzana = "Parcela";
     loteNum = lot.split(" ")[1];
@@ -1916,9 +2034,9 @@ window.handleLotCardClick = function (lotNumber) {
         id: e.id,
         properties: e.properties
           ? Object.keys(e.properties).reduce((acc, key) => {
-              acc[key] = e.properties[key]._value;
-              return acc;
-            }, {})
+            acc[key] = e.properties[key]._value;
+            return acc;
+          }, {})
           : null,
       }))
     );
@@ -2074,8 +2192,8 @@ async function loadEntornoMarkers(filterType = null) {
       // Filtrar features por tipo si se especifica
       const filteredFeatures = filterType
         ? entornoData.features.filter(
-            (feature) => feature.properties.tipo === filterType
-          )
+          (feature) => feature.properties.tipo === filterType
+        )
         : entornoData.features;
 
       filteredFeatures.forEach((feature) => {
@@ -2213,9 +2331,9 @@ async function calculateRoute(token, start, end, tipo = null) {
 
     const response = await fetch(
       `https://api.openrouteservice.org/v2/directions/driving-car?` +
-        `api_key=${openRouteServiceKey}&` +
-        `start=${start[0]},${start[1]}&` +
-        `end=${end[0]},${end[1]}`
+      `api_key=${openRouteServiceKey}&` +
+      `start=${start[0]},${start[1]}&` +
+      `end=${end[0]},${end[1]}`
     );
 
     if (!response.ok) {
@@ -2345,17 +2463,17 @@ function closeVideoOverlay() {
 // Función para seleccionar un lote por entidad (usada desde URL highlight)
 function selectLotByEntity(entity) {
   if (!entity || !entity.polygon) return;
-  
+
   const fid = getFid(entity);
   if (fid === undefined) return;
-  
+
   // Primero limpiar todo (botones, marcadores, modales, rutas)
   reiniciarMenu();
 
   // Select new entity
   selected = entity;
   selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
-  
+
   const btnGrid = document.getElementById("grid");
   if (btnGrid && btnGrid.classList.contains("active")) {
     const estadoProp = entity.properties?.estado;
@@ -2363,9 +2481,18 @@ function selectLotByEntity(entity) {
       typeof estadoProp?.getValue === "function"
         ? estadoProp.getValue()
         : estadoProp;
-    entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.5);
+    entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.85);
+    if (entity.polyline) {
+      entity.polyline.width = 6;
+      entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.3);
+    }
   } else {
     entity.polygon.material = modeSelected.withAlpha(0);
+    if (entity.polyline) {
+      entity.polyline.show = true;
+      entity.polyline.width = 6;
+      entity.polyline.material = createGlowMaterial(window.Cesium.Color.fromCssColorString("#FFFFFF"), 0.3);
+    }
   }
 
   viewer.scene.requestRender();
@@ -2544,6 +2671,11 @@ function toggleGrid() {
 
   if (!lotesDataSource) return;
   const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);
+  
+  // If it currently has active class, it means we are turning it OFF
+  const willBeActive = !btnGrid.classList.contains("active");
+  console.log("🔄 [toggleGrid] Toggling grid active class. Grid will be active:", willBeActive);
+
   entitiesAll.forEach((e) => {
     const loteValue = e.properties.lote ? e.properties.lote.getValue() : "";
     if (loteValue === "") {
@@ -2552,28 +2684,37 @@ function toggleGrid() {
       return;
     }
 
-    if (btnGrid.classList.contains("active")) {
+    if (willBeActive) {
+      // Activating grid: colorful status colors
       const estadoProp = e.properties?.estado;
       const estadoValue =
         typeof estadoProp?.getValue === "function"
           ? estadoProp.getValue()
           : estadoProp;
-      e._baseMaterial = getStatusColor(estadoValue).withAlpha(0.6);
+      e._baseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
       if (e !== selected) {
         e.polygon.material = e._baseMaterial;
       }
+      if (e.polyline) {
+        e.polyline.show = true;
+        e.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.25);
+      }
     } else {
+      // Deactivating grid: semi-transparent white/transparent
       if (e !== selected) {
         e.polygon.material = modeSelected.withAlpha(0.1);
       }
       e._baseMaterial = modeSelected.withAlpha(0.1);
+      if (e.polyline) {
+        e.polyline.show = false;
+      }
     }
   });
 
-  if (btnGrid.classList.contains("active")) {
-    btnGrid.classList.remove("active");
-  } else {
+  if (willBeActive) {
     btnGrid.classList.add("active");
+  } else {
+    btnGrid.classList.remove("active");
   }
 
   if (viewer) viewer.scene.requestRender();
@@ -2590,11 +2731,11 @@ window.toggleGrid = toggleGrid;
 // Función para controlar la hora del día y posicionar el sol
 function setTimeOfDay(hour) {
   if (!viewer) return;
-  
+
   try {
     // Asegurar que la hora esté en el rango 0-24
     hour = Math.max(0, Math.min(24, hour));
-    
+
     // Obtener la posición central del proyecto para calcular la hora solar
     let centerPosition = null;
     if (lotesPositions && lotesPositions.length > 0) {
@@ -2604,40 +2745,40 @@ function setTimeOfDay(hour) {
       // Usar coordenadas de fallback
       centerPosition = window.Cesium.Cartesian3.fromDegrees(-71.8970, -17.0998, 0);
     }
-    
+
     // Convertir a Cartographic para obtener latitud
     const centerCartographic = window.Cesium.Cartographic.fromCartesian(centerPosition);
-    
+
     // Crear una fecha base (hoy) con la hora especificada
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
     const day = now.getDate();
-    
+
     // Extraer horas y minutos de la hora decimal
     const hours = Math.floor(hour);
     const minutes = Math.floor((hour - hours) * 60);
-    
+
     // Crear fecha con la hora especificada en hora LOCAL (no UTC)
     // Esto asegura que la hora que se muestra sea la hora real del día
     const dateTime = new Date(year, month, day, hours, minutes, 0);
-    
+
     // Convertir a JulianDate de Cesium
     const julianDate = window.Cesium.JulianDate.fromDate(dateTime);
-    
+
     // Configurar el reloj de Cesium con la hora especificada
     viewer.clock.currentTime = julianDate;
     viewer.clock.shouldAnimate = false; // No animar automáticamente
-    
+
     // Habilitar iluminación del globo y sol
     viewer.scene.globe.enableLighting = true;
     viewer.scene.sun.show = true;
     viewer.scene.moon.show = true;
-    
+
     // Asegurar que el sol se actualice según la hora
     viewer.scene.globe.dynamicAtmosphereLighting = true;
     viewer.scene.globe.dynamicAtmosphereLightingFromSun = true;
-    
+
     // Forzar actualización de la escena
     viewer.scene.requestRender();
   } catch (error) {
