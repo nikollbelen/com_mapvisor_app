@@ -1,0 +1,94 @@
+.admin-ui-panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 100px;
+}
+
+.admin-ui-panel {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(30, 32, 32, 0.96);
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.admin-ui-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.admin-ui-panel-header h3 {
+  margin: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  color: #fff;
+}
+
+.admin-ui-panel-close {
+  background: none;
+  border: none;
+  color: #e9c176;
+  cursor: pointer;
+}
+
+.admin-ui-panel-desc {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+
+.admin-ui-panel-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-ui-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+}
+
+.admin-ui-toggle input {
+  accent-color: #e9c176;
+}
+
+.admin-ui-toggle .material-symbols-outlined {
+  color: #e9c176;
+  font-size: 20px;
+}
+
+.admin-ui-reset {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  background: rgba(197, 160, 89, 0.1);
+  color: #e9c176;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-ui-reset:hover {
+  background: rgba(197, 160, 89, 0.2);
+}

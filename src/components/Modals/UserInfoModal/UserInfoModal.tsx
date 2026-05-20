@@ -6,6 +6,7 @@ interface UserInfoModalProps {
     id: string;
     full_name: string;
     email: string;
+    role?: string;
   };
   onClose: () => void;
   onLogout: () => void;
@@ -52,23 +53,24 @@ const UserInfoModal = ({ isVisible, user, onClose, onLogout }: UserInfoModalProp
               </div>
               
               <div className="user-info-field">
-                <label>Estado:</label>
+                <label>Rol:</label>
                 <span className="status-active">
-                  <span className="material-symbols-outlined status-dot">circle</span>
-                  Activo
+                  {user.role === "admin" ? "Administrador" : "Vendedor"}
                 </span>
               </div>
             </div>
           </div>
 
           <div className="user-info-actions">
-            <button 
-              className="btn-dashboard" 
-              onClick={handleGoToDashboard}
-            >
-               <span className="material-symbols-outlined">dashboard</span>
-              Ir al Dashboard
-            </button>
+            {user.role === "admin" && ADMIN_URL && (
+              <button
+                className="btn-dashboard"
+                onClick={handleGoToDashboard}
+              >
+                <span className="material-symbols-outlined">dashboard</span>
+                Ir al Dashboard
+              </button>
+            )}
             <button className="btn-logout" onClick={handleLogout}>
                <span className="material-symbols-outlined">logout</span>
               Cerrar Sesión

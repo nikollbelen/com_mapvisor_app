@@ -53,8 +53,8 @@ const BottomBar = () => {
             </div>
             <div className="h-6 w-px bg-outline-variant"></div>
             <div className="flex items-center gap-unit text-on-surface-variant">
-              <span className="text-[10px] font-label-caps uppercase tracking-widest">Total Lotes</span>
-              <span className="text-on-surface font-bold text-sm">142</span>
+              <span className="text-[10px] font-label-caps uppercase tracking-widest">Total Parcelas</span>
+              <span className="text-on-surface font-bold text-sm">11</span>
             </div>
           </div>
         </footer>

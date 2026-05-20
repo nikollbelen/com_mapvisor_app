@@ -1,16 +1,38 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useUiVisibility } from '../../contexts/UiVisibilityContext';
+import type { TopbarButtonId } from '../../types/auth';
+import AdminUiPanel from '../AdminUiPanel/AdminUiPanel';
 import LoginModal from '../Modals/LoginModal/LoginModal';
 import UserInfoModal from '../Modals/UserInfoModal/UserInfoModal';
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const { isButtonVisible } = useUiVisibility();
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isUserInfoModalOpen, setIsUserInfoModalOpen] = useState(false);
+  const [isAdminUiPanelOpen, setIsAdminUiPanelOpen] = useState(false);
   const previousUserRef = useRef(user);
+
+  const navItems: {
+    id: TopbarButtonId;
+    label: string;
+    shortLabel: string;
+    icon: string;
+    mobileIcon?: string;
+    mobileSubtitle?: string;
+  }[] = [
+    { id: 'fotos', label: 'Fotos 360', shortLabel: 'Fotos 360', icon: '360', mobileIcon: '360', mobileSubtitle: 'RECORRIDO VIRTUAL' },
+    { id: 'areas', label: 'Áreas Comunes', shortLabel: 'Áreas Comunes', icon: 'park', mobileIcon: 'pool', mobileSubtitle: 'AMENIDADES PREMIUM' },
+    { id: 'lotes', label: 'Lotes', shortLabel: 'Lotes', icon: 'grid_view', mobileSubtitle: 'DISPONIBILIDAD' },
+    { id: 'entorno', label: 'Entorno', shortLabel: 'Entorno', icon: 'landscape', mobileIcon: 'distance', mobileSubtitle: 'UBICACIÓN Y SERVICIOS' },
+    { id: 'video', label: 'Video', shortLabel: 'Video', icon: 'videocam', mobileIcon: 'play_circle', mobileSubtitle: 'CINEMATOGRÁFICO' },
+  ];
+
+  const visibleNavItems = navItems.filter((item) => isButtonVisible(item.id));
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -31,14 +53,21 @@ const Sidebar = () => {
 
     const handleSearchModalOpen = () => setActiveItem('lotes');
 
+    const handleOpenLoginModal = () => {
+      setIsLoginModalOpen(true);
+      setActiveItem('usuario');
+    };
+
     window.addEventListener('clearAllModals', handleClearState);
     window.addEventListener('reiniciarMenu', handleClearState);
     window.addEventListener('openLotSearchModal', handleSearchModalOpen);
+    window.addEventListener('openLoginModal', handleOpenLoginModal);
     
     return () => {
       window.removeEventListener('clearAllModals', handleClearState);
       window.removeEventListener('reiniciarMenu', handleClearState);
       window.removeEventListener('openLotSearchModal', handleSearchModalOpen);
+      window.removeEventListener('openLoginModal', handleOpenLoginModal);
     };
   }, [isLoginModalOpen, isUserInfoModalOpen]);
 
@@ -162,26 +191,33 @@ const Sidebar = () => {
             </div>
             {/* Navigation Buttons */}
             <nav className="flex items-center gap-element-gap">
-              <button id="fotos" className={navBtnClass('fotos')} onClick={() => handleItemClick('fotos')}>
-                <span className="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" style={navIconStyle('fotos')}>360</span>
-                <span className="font-label-caps text-[9px] uppercase">Fotos 360</span>
-              </button>
-              <button id="areas" className={navBtnClass('areas')} onClick={() => handleItemClick('areas')}>
-                <span className="material-symbols-outlined mb-1" style={navIconStyle('areas')}>park</span>
-                <span className="font-label-caps text-[9px] uppercase">Áreas Comunes</span>
-              </button>
-              <button id="lotes" className={navBtnClass('lotes')} onClick={() => handleItemClick('lotes')}>
-                <span className="material-symbols-outlined mb-1" style={navIconStyle('lotes')}>grid_view</span>
-                <span className="font-label-caps text-[9px] uppercase">Lotes</span>
-              </button>
-              <button id="entorno" className={navBtnClass('entorno')} onClick={() => handleItemClick('entorno')}>
-                <span className="material-symbols-outlined mb-1" style={navIconStyle('entorno')}>landscape</span>
-                <span className="font-label-caps text-[9px] uppercase">Entorno</span>
-              </button>
-              <button id="video" className={navBtnClass('video')} onClick={() => handleItemClick('video')}>
-                <span className="material-symbols-outlined mb-1" style={navIconStyle('video')}>videocam</span>
-                <span className="font-label-caps text-[9px] uppercase">Video</span>
-              </button>
+              {visibleNavItems.map((item) => (
+                <button
+                  key={item.id}
+                  id={item.id}
+                  className={navBtnClass(item.id)}
+                  onClick={() => handleItemClick(item.id)}
+                >
+                  <span
+                    className="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform"
+                    style={navIconStyle(item.id)}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="font-label-caps text-[9px] uppercase">{item.shortLabel}</span>
+                </button>
+              ))}
+              {isAdmin && (
+                <button
+                  type="button"
+                  className={navBtnClass('vista')}
+                  onClick={() => setIsAdminUiPanelOpen(true)}
+                  title="Configurar botones visibles"
+                >
+                  <span className="material-symbols-outlined mb-1" style={navIconStyle('vista')}>tune</span>
+                  <span className="font-label-caps text-[9px] uppercase">Vista</span>
+                </button>
+              )}
               <div className="w-px h-8 bg-outline-variant mx-2"></div>
               <button className={navBtnClass('usuario')} onClick={() => handleItemClick('usuario')}>
                 <span className="material-symbols-outlined mb-1">account_circle</span>
@@ -268,57 +304,50 @@ const Sidebar = () => {
           </div>
           {/* Navigation Menu Items */}
           <div className="flex-1 flex flex-col justify-center space-y-4">
-            {/* 1. Fotos 360° */}
-            <a id="fotos" className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${activeItem === 'fotos' ? 'bg-white/10 hud-gold-border' : 'bg-white/5 hud-gold-border'}`} onClick={() => handleItemClick('fotos')}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">360</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-h3 text-on-surface">Fotos 360°</span>
-                <span className="font-label-caps text-on-surface-variant text-[10px]">RECORRIDO VIRTUAL</span>
-              </div>
-            </a>
-            {/* 2. Áreas comunes */}
-            <a id="areas" className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${activeItem === 'areas' ? 'bg-white/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`} onClick={() => handleItemClick('areas')}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">pool</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-h3 text-on-surface">Áreas comunes</span>
-                <span className="font-label-caps text-on-surface-variant text-[10px]">AMENIDADES PREMIUM</span>
-              </div>
-            </a>
-            {/* 3. Lotes */}
-            <a id="lotes" className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${activeItem === 'lotes' ? 'bg-white/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`} onClick={() => handleItemClick('lotes')}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">grid_view</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-h3 text-on-surface">Lotes</span>
-                <span className="font-label-caps text-on-surface-variant text-[10px]">DISPONIBILIDAD</span>
-              </div>
-            </a>
-            {/* 4. Entorno */}
-            <a id="entorno" className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${activeItem === 'entorno' ? 'bg-white/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`} onClick={() => handleItemClick('entorno')}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">distance</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-h3 text-on-surface">Entorno</span>
-                <span className="font-label-caps text-on-surface-variant text-[10px]">UBICACIÓN Y SERVICIOS</span>
-              </div>
-            </a>
-            {/* 5. Video */}
-            <a id="video" className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${activeItem === 'video' ? 'bg-white/10 border border-primary/20' : 'bg-white/5 border border-white/10'}`} onClick={() => handleItemClick('video')}>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">play_circle</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-h3 text-on-surface">Video</span>
-                <span className="font-label-caps text-on-surface-variant text-[10px]">CINEMATOGRÁFICO</span>
-              </div>
-            </a>
-            {/* 6. Usuario */}
+            {visibleNavItems.map((item) => (
+              <a
+                key={item.id}
+                id={item.id}
+                className={`group flex items-center gap-5 p-5 rounded-2xl transition-all hover:bg-white/10 hover:translate-x-2 ${
+                  activeItem === item.id
+                    ? "bg-white/10 border border-primary/20"
+                    : "bg-white/5 border border-white/10"
+                }`}
+                onClick={() => handleItemClick(item.id)}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-[28px]">
+                    {item.mobileIcon || item.icon}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-h3 text-on-surface">{item.label}</span>
+                  {item.mobileSubtitle && (
+                    <span className="font-label-caps text-on-surface-variant text-[10px]">
+                      {item.mobileSubtitle}
+                    </span>
+                  )}
+                </div>
+              </a>
+            ))}
+            {isAdmin && (
+              <a
+                className="group flex items-center gap-5 p-5 rounded-2xl bg-white/5 border border-white/10 transition-all hover:bg-white/10 hover:translate-x-2"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsAdminUiPanelOpen(true);
+                }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-[28px]">tune</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-h3 text-on-surface">Configurar vista</span>
+                  <span className="font-label-caps text-on-surface-variant text-[10px]">ADMINISTRADOR</span>
+                </div>
+              </a>
+            )}
+            {/* Usuario */}
             <a className="group flex items-center gap-5 p-5 rounded-2xl bg-primary-container/20 hud-gold-border transition-all hover:bg-primary-container/30 hover:translate-x-2" onClick={() => handleItemClick('usuario')}>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary text-on-primary group-hover:scale-110 transition-transform">
                 <span className="material-symbols-outlined text-[28px]">person</span>
@@ -339,6 +368,11 @@ const Sidebar = () => {
         </div>
       )}
 
+
+      <AdminUiPanel
+        isOpen={isAdminUiPanelOpen}
+        onClose={() => setIsAdminUiPanelOpen(false)}
+      />
 
       {/* Modals */}
       <LoginModal isVisible={isLoginModalOpen} onClose={handleCloseLoginModal} />

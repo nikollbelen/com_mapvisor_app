@@ -1144,6 +1144,27 @@ function setupLoteInteractions() {
     if (!entity) return;
     const fid = getFid(entity);
     if (fid === undefined) return;
+
+    // Evitar interacción si el lote está vacío (sin número)
+    const loteValue = entity.properties.lote
+      ? typeof entity.properties.lote.getValue === "function"
+        ? entity.properties.lote.getValue()
+        : entity.properties.lote
+      : "";
+    if (loteValue === "") {
+      return;
+    }
+
+    // Si ya está seleccionado, deseleccionar
+    if (selected === entity) {
+      if (window.closeLotInfoModal) {
+        window.closeLotInfoModal();
+      } else {
+        reiniciarMenu();
+      }
+      return;
+    }
+
     // Primero limpiar todo (botones, marcadores, modales, rutas)
     reiniciarMenu();
 
@@ -1151,25 +1172,24 @@ function setupLoteInteractions() {
     selected = entity;
     selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
 
-    // Actualizar efecto al seleccionar
-    if (btnGrid && btnGrid.classList.contains("active")) {
-      const estadoProp = entity.properties?.estado;
-      const estadoValue =
-        typeof estadoProp?.getValue === "function"
-          ? estadoProp.getValue()
-          : estadoProp;
-      entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.85); // Opacidad máxima al seleccionar
+    // Actualizar efecto al seleccionar (usar el mismo color que en hover)
+    const activeGridBtn = getBtnGrid();
+    const gridActive = activeGridBtn && activeGridBtn.classList.contains("active");
+
+    const estadoProp = entity.properties?.estado;
+    const estadoValue =
+      typeof estadoProp?.getValue === "function"
+        ? estadoProp.getValue()
+        : estadoProp;
+
+    if (gridActive) {
+      entity.polygon.material = getStatusColor(estadoValue).withAlpha(0.7);
       if (entity.polyline) {
-        entity.polyline.width = 6; // Más grueso al estar seleccionado
-        entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.3);
+        entity.polyline.width = 2;
+        entity.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.35);
       }
     } else {
-      entity.polygon.material = modeSelected.withAlpha(0);
-      if (entity.polyline) {
-        entity.polyline.show = true;
-        entity.polyline.width = 6;
-        entity.polyline.material = createGlowMaterial(window.Cesium.Color.fromCssColorString("#FFFFFF"), 0.3);
-      }
+      entity.polygon.material = modeSelected.withAlpha(0.2);
     }
 
     viewer.scene.requestRender();

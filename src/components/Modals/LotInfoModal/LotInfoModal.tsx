@@ -10,12 +10,12 @@ import {
 import jsPDF from 'jspdf';
 import "./LotInfoModal.css";
 import ContactModal from "../ContactModal/ContactModal";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface LotInfoModalProps {
   isVisible?: boolean;
   onClose?: () => void;
   loteData?: any;
-  currentUser?: {id: string; full_name?: string; email: string} | null;
 }
 
 const canUseDom = typeof window !== "undefined" && typeof document !== "undefined";
@@ -335,12 +335,10 @@ const LotInfoModal = ({
   isVisible = false,
   onClose,
   loteData,
-  currentUser,
 }: LotInfoModalProps) => {
+  const { user, canUseCotizador } = useAuth();
   const [showQuotation, setShowQuotation] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [userState, setUserState] = useState(currentUser);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [maxDiscount, setMaxDiscount] = useState<number | null>(null);
   // const [discountError, setDiscountError] = useState('');
@@ -381,16 +379,6 @@ const LotInfoModal = ({
       });
     return () => controller.abort();
   }, []);
-
-  // Sincronizar el estado del usuario cuando cambie la prop
-  useEffect(() => {
-    setUserState(currentUser);
-  }, [currentUser]);
-
-  // Debug: Log user state changes
-  useEffect(() => {
-  }, [userState]);
-
 
   const formatLotLabel = (direccion?: string, phase?: string) => {
     const normalizedPhase = (phase || '').toString().replace(/^\s*etapa\s+/i, '').trim();
@@ -644,20 +632,7 @@ const LotInfoModal = ({
       currentStatus !== 'disponible' &&
       showQuotation
     ) {
-      // Quitar la clase flip del modal para que vuelva a la vista de información
-      // Hacerlo de forma suave, similar a handleBackToLot
-      const modal = document.querySelector(".lot-modal");
-      if (modal) {
-        modal.classList.remove("flip");
-        
-        // Esperar a que termine la animación antes de cambiar el estado
-        setTimeout(() => {
-          setShowQuotation(false);
-        }, 400); // Half of animation duration
-      } else {
-        // Si no se encuentra el modal, cerrar inmediatamente
-        setShowQuotation(false);
-      }
+      setShowQuotation(false);
       
       // Limpiar el schedule
       setSchedule([]);
@@ -1003,68 +978,72 @@ const LotInfoModal = ({
     }
   };
 
-  /*
   const getBasePrice = () => {
     const price = loteData?.precio;
-    if (typeof price === 'number') return price;
-    const parsed = price ? parseFloat(price) : NaN;
-    return !isNaN(parsed) ? parsed : 445000;
+    if (typeof price === "number") return price;
+    const parsed = price ? parseFloat(String(price)) : NaN;
+    return !isNaN(parsed) ? parsed : 0;
   };
-  */
 
-  /*
   const validateDiscountValue = (percentage: number) => {
-    if (percentage < 0) {
-      // setDiscountError('El descuento no puede ser negativo');
-      return false;
-    }
-    if (maxDiscount !== null && percentage > maxDiscount) {
-      // setDiscountError(`El descuento máximo permitido es ${maxDiscount}%`);
-      return false;
-    }
-    // setDiscountError('');
+    if (percentage < 0) return false;
+    if (maxDiscount !== null && percentage > maxDiscount) return false;
     return true;
   };
-  */
 
-  /*
   const applyDiscountFromAmount = (amount: number) => {
     const priceBase = getBasePrice();
     const percentage = priceBase ? (amount / priceBase) * 100 : 0;
-    if (!validateDiscountValue(percentage)) return;
-    setDiscountAmount(amount);
-    setDiscountPercentage(percentage);
-    handleFieldChange("discount");
+    if (!validateDiscountValue(percentage)) {
+      setDiscountAmount(0);
+      setDiscountPercentage(0);
+      return;
+    }
+    setDiscountAmount(roundToTwoDecimals(amount));
+    setDiscountPercentage(Math.round(percentage * 1000) / 1000);
+    setNeedsUpdate(true);
   };
-  */
 
-  /*
   const applyDiscountFromPercentage = (percentage: number) => {
     if (!validateDiscountValue(percentage)) return;
     const priceBase = getBasePrice();
     const amount = (percentage / 100) * priceBase;
-    setDiscountPercentage(percentage);
-    setDiscountAmount(amount);
-    handleFieldChange("discount");
+    setDiscountPercentage(Math.round(percentage * 1000) / 1000);
+    setDiscountAmount(roundToTwoDecimals(amount));
+    setNeedsUpdate(true);
   };
-  */
 
-  /*
-  const handleDiscountChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "amount" | "percentage"
-  ) => {
-    if (type === "amount") {
-      handleDecimalInput(e.target.value, 'discount-amount', (amount) => {
-        applyDiscountFromAmount(amount);
-      });
-    } else {
-      handleDecimalInput(e.target.value, 'discount-percentage', (percentage) => {
-        applyDiscountFromPercentage(percentage);
-      });
-    }
+  const formatMoney = (value: number) => {
+    const formatted = value.toFixed(2);
+    const parts = formatted.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return `$${parts.join(".")}`;
   };
-  */
+
+  const basePrice = getBasePrice();
+  const finalPrice = Math.max(0, basePrice - discountAmount);
+
+  const discountPresets = useMemo(() => {
+    const max = maxDiscount ?? 20;
+    const presets = [0, 5, 10, 15].filter((p) => p <= max);
+    const roundedMax = Math.round(max);
+    if (roundedMax > 0 && !presets.includes(roundedMax)) {
+      presets.push(roundedMax);
+    }
+    return [...new Set(presets)].sort((a, b) => a - b);
+  }, [maxDiscount]);
+
+  const estimatedMonthlyPayment = useMemo(() => {
+    if (paymentMethod !== "credito_directo" || numberOfInstallments <= 0) return 0;
+    const financed = Math.max(0, finalPrice - separation.amount - initial.amount);
+    return roundToTwoDecimals(financed / numberOfInstallments);
+  }, [
+    paymentMethod,
+    numberOfInstallments,
+    finalPrice,
+    separation.amount,
+    initial.amount,
+  ]);
 
   const handlePaymentMethodChange = (method: string) => {
     setPaymentMethod(method);
@@ -1903,7 +1882,7 @@ const LotInfoModal = ({
       }
     ];
 
-    if (userState) {
+    if (user) {
       contactDetails.push(
         { label: 'Vendedor:', value: contactData.vendedor?.full_name || '—' },
         { label: 'Email vendedor:', value: contactData.vendedor?.email || '—' }
@@ -2360,7 +2339,7 @@ const LotInfoModal = ({
       const finalFileName = getFileName(contactData, 'Cronograma', 'pdf', quotationCode);
       
       // Obtener el agente actual (vendedor logueado)
-      const currentAgent = userState;
+      const currentAgent = user;
       const agentId = currentAgent?.id || '68f5db6bd9c0deedd190e4ce'; // ID por defecto
       
       // Preparar los datos del formulario
@@ -2491,49 +2470,47 @@ const LotInfoModal = ({
     }
   };
 
-  const handleQuotationClick = () => {
-    if (isAnimating) return; // Prevent multiple clicks during animation
-
-    setIsAnimating(true);
-
-    // First apply the rotation (add flip class)
-    const modal = document.querySelector(".lot-modal");
-    if (modal) {
-      modal.classList.add("flip");
-
-      // Wait for half the animation to complete, then change content
-      setTimeout(() => {
-        setShowQuotation(true);
-      }, 400); // Half of animation duration (0.8s / 2)
-
-      // Wait for full animation to complete
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 800); // Full animation duration
+  const initializeQuotationDefaults = () => {
+    if (!firstPaymentDate) {
+      setFirstPaymentDate(format(addMonths(new Date(), 1), "dd/MM/yyyy"));
     }
+    if (paymentMethod !== "credito_directo") return;
+    const priceAfterDiscount = Math.max(0, getBasePrice() - discountAmount);
+    if (numberOfInstallments <= 0) {
+      setNumberOfInstallments(12);
+    }
+    if (separation.amount === 0 && separation.percentage === 0) {
+      setSeparation({
+        amount: roundToTwoDecimals(priceAfterDiscount * 0.1),
+        percentage: 10,
+        enabled: true,
+      });
+    }
+    if (initial.amount === 0 && initial.percentage === 0) {
+      setInitial({
+        amount: roundToTwoDecimals(priceAfterDiscount * 0.2),
+        percentage: 20,
+      });
+    }
+  };
+
+  const handleQuotationClick = () => {
+    if (normalizedLotStatus !== "disponible") return;
+    if (!canUseCotizador) {
+      setToastMessage("Inicia sesión como vendedor para usar el cotizador.");
+      window.dispatchEvent(new CustomEvent("openLoginModal"));
+      setTimeout(() => setToastMessage(null), 5000);
+      return;
+    }
+    initializeQuotationDefaults();
+    setShowQuotation(true);
   };
 
   const handleBackToLot = () => {
-    if (isAnimating) return; // Prevent multiple clicks during animation
-
-    setIsAnimating(true);
-
-    // First apply the rotation (remove flip class)
-    const modal = document.querySelector(".lot-modal");
-    if (modal) {
-      modal.classList.remove("flip");
-
-      // Wait for half the animation to complete, then change content
-      setTimeout(() => {
-        setShowQuotation(false);
-      }, 400); // Half of animation duration (0.8s / 2)
-
-      // Wait for full animation to complete
-      setTimeout(() => {
-        setIsAnimating(false);
-      }, 800); // Full animation duration
-    }
+    setShowQuotation(false);
   };
+
+  const isLotAvailable = normalizedLotStatus === "disponible";
 
   /*
   const handleClearSchedule = () => {
@@ -2572,16 +2549,6 @@ const LotInfoModal = ({
       : generateQuotationCode();
     setQuotationCodeForModal(code);
     setModalType("save");
-    setShowContactModal(true);
-  };
-
-  const handleEmail = () => {
-    // Generar o reutilizar código de cotización
-    const code = (hasBeenSaved && lastSavedData?.quotationCode) 
-      ? lastSavedData.quotationCode 
-      : generateQuotationCode();
-    setQuotationCodeForModal(code);
-    setModalType("email");
     setShowContactModal(true);
   };
 
@@ -2796,7 +2763,7 @@ const LotInfoModal = ({
                 <span class="info-label">Celular cliente:</span>
                 <span class="info-value">${contactData.cliente?.telefono ? `${formatPhone(contactData.cliente.telefono, contactData.cliente?.codigoPais || '+51')}` : '—'}</span>
               </div>
-            ${userState ? `
+            ${user ? `
               <div class="info-row">
                 <span class="info-label">Vendedor:</span>
                 <span class="info-value">${contactData.vendedor?.full_name || '—'}</span>
@@ -2900,7 +2867,7 @@ const LotInfoModal = ({
 
   const handleContactSubmit = async (contactData: any) => {
     // Determinar si el usuario está logueado (agente comercial)
-    const isLoggedIn = !!userState;
+    const isLoggedIn = !!user;
     
     // Capturar datos actuales
     const currentData = captureCurrentData(contactData);
@@ -3053,9 +3020,10 @@ const LotInfoModal = ({
 
   return (
     <div className={`lot-modal-overlay ${isVisible ? 'show' : 'hide'}`} id="modalOverlay">
-      <div className={`lot-modal ${showQuotation ? 'flip' : ''}`}>
+      <div className="lot-modal hud-glass-panel hud-gold-edge">
         
-        {/* Cara frontal - Información del lote */}
+        {/* Información del lote */}
+        {!showQuotation && (
         <div className="lot-modal-front">
           <button className="lot-modal-close" onClick={handleClose}>
             <span className="material-symbols-outlined">close</span>
@@ -3141,106 +3109,195 @@ const LotInfoModal = ({
             </div>
 
             <div className="lot-buttons-container">
-              {!userState && (
+              {!user && (
                 <button 
                   className="lot-contact-btn" 
                   onClick={handleWhatsAppClick}
-                  disabled={lotData.status !== 'disponible'}
+                  disabled={!isLotAvailable}
                 >
                   <span className="material-symbols-outlined">chat</span>
                   <span>Contactar</span>
                 </button>
               )}
-              <button 
-                className="lot-whatsapp-btn" 
-                style={{ 
-                  opacity: lotData.status === 'disponible' ? 1 : 0.6,
-                  cursor: lotData.status === 'disponible' ? 'pointer' : 'not-allowed'
-                }} 
-                onClick={lotData.status === 'disponible' ? handleQuotationClick : undefined}
+              <button
+                type="button"
+                className="lot-whatsapp-btn"
+                style={{
+                  opacity: isLotAvailable ? 1 : 0.6,
+                  cursor: isLotAvailable ? "pointer" : "not-allowed",
+                }}
+                onClick={isLotAvailable ? handleQuotationClick : undefined}
+                disabled={!isLotAvailable}
               >
                 <span className="material-symbols-outlined">calculate</span>
-                <span>{lotData.status === 'disponible' ? 'Cotizar Ahora' : 'Lote no disponible'}</span>
+                <span>
+                  {!isLotAvailable
+                    ? "Lote no disponible"
+                    : canUseCotizador
+                      ? "Cotizar Ahora"
+                      : "Cotizar (requiere vendedor)"}
+                </span>
               </button>
             </div>
           </div>
         </div>
+        )}
 
-        {/* Cara trasera - Cotización */}
-        <div className="lot-modal-back">
-          <button className="lot-modal-back-link" onClick={handleBackToLot}>
+        {/* Cotizador */}
+        {showQuotation && (
+        <div className="lot-modal-quotation">
+          <button className="lot-modal-close" onClick={handleClose} type="button">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+          <button className="lot-modal-back-link" onClick={handleBackToLot} type="button">
             <span className="material-symbols-outlined">arrow_back</span>
             <span>Volver a Información</span>
           </button>
 
-          <div className="lot-modal-content">
-            <h2 className="quotation-title">Cotización del Lote</h2>
+          <div className="lot-modal-content quotation-content">
+            <div className="quotation-header">
+              <div className="quotation-header-icon">
+                <span className="material-symbols-outlined">request_quote</span>
+              </div>
+              <div>
+                <h2 className="quotation-title">Cotizador</h2>
+                <p className="quotation-subtitle">
+                  {getLotWithoutPhase(lotData.lot)} · Etapa {lotData.phase || "1"}
+                </p>
+              </div>
+            </div>
 
-            <div className="quotation-details-section">
-              <div className="quotation-table-row">
-                <div className="quotation-cell item-name">Unidad Seleccionada</div>
-                <div className="quotation-cell item-value">{getLotWithoutPhase(lotData.lot)}</div>
+            <div className="quotation-summary-grid">
+              <div className="quotation-summary-card">
+                <span className="summary-label">Precio lista</span>
+                <span className="summary-value">{lotData.price}</span>
               </div>
-              <div className="quotation-table-row">
-                <div className="quotation-cell item-name">Precio de Lista</div>
-                <div className="quotation-cell item-value">{lotData.price}</div>
+              <div className="quotation-summary-card highlight">
+                <span className="summary-label">Descuento</span>
+                <span className="summary-value discount">
+                  -{formatMoney(discountAmount)}
+                  {discountPercentage > 0 && (
+                    <small> ({discountPercentage.toFixed(1)}%)</small>
+                  )}
+                </span>
               </div>
-              <div className="quotation-table-row">
-                <div className="quotation-cell item-name">Descuento Aplicado</div>
-                <div className="quotation-cell item-value">
+              <div className="quotation-summary-card total">
+                <span className="summary-label">Precio final</span>
+                <span className="summary-value">{formatMoney(finalPrice)}</span>
+              </div>
+            </div>
+
+            <section className="quotation-section">
+              <h3 className="section-title">
+                <span className="material-symbols-outlined">sell</span>
+                Descuentos
+              </h3>
+              {maxDiscount !== null && (
+                <p className="quotation-hint">
+                  Descuento máximo autorizado: {maxDiscount}%
+                </p>
+              )}
+              <div className="discount-presets">
+                {discountPresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={`discount-preset-btn ${
+                      Math.round(discountPercentage) === preset ? "active" : ""
+                    }`}
+                    onClick={() => applyDiscountFromPercentage(preset)}
+                  >
+                    {preset === 0 ? "Sin desc." : `${preset}%`}
+                  </button>
+                ))}
+              </div>
+              <div className="discount-inputs-row">
+                <div className="form-group">
+                  <label className="form-label">Porcentaje</label>
                   <input
                     type="text"
-                    className="discount-input"
-                    value={getFormattedValue(discountAmount, 'usd', 'discount-amount')}
-                    onFocus={() => handleInputFocus('discount-amount')}
-                    onBlur={() => handleDecimalBlur('discount-amount', (amount) => {
-                      if (maxDiscount !== null && amount > ((maxDiscount / 100) * (loteData?.precio || 0))) {
-                        // setDiscountError(`El descuento máximo es del ${maxDiscount}%`);
-                        setDiscountAmount(0);
-                        setDiscountPercentage(0);
-                      } else {
-                        // setDiscountError('');
-                        setDiscountAmount(amount);
-                        const pct = (amount / (loteData?.precio || 1)) * 100;
-                        setDiscountPercentage(pct);
-                      }
-                      setNeedsUpdate(true);
-                    })}
+                    className="form-input"
+                    value={getFormattedValue(discountPercentage, "percentage", "discount-percentage")}
+                    onFocus={() => handleInputFocus("discount-percentage")}
+                    onBlur={() =>
+                      handleDecimalBlur("discount-percentage", (percentage) => {
+                        applyDiscountFromPercentage(percentage);
+                      })
+                    }
                     onChange={(e) => {
-                      handleDecimalInput(e.target.value, 'discount-amount', (amount) => {
+                      handleDecimalInput(e.target.value, "discount-percentage", (percentage) => {
+                        const priceBase = getBasePrice();
+                        const amount = (percentage / 100) * priceBase;
+                        setDiscountPercentage(percentage);
                         setDiscountAmount(amount);
                         setNeedsUpdate(true);
                       });
                     }}
                   />
                 </div>
-              </div>
-              <div className="quotation-table-row total-row">
-                <div className="quotation-cell item-name total-label">Precio Final</div>
-                <div className="quotation-cell item-value total-value">
-                  ${" "}{( (loteData?.precio || 0) - discountAmount ).toLocaleString()}
+                <div className="form-group">
+                  <label className="form-label">Monto USD</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={getFormattedValue(discountAmount, "usd", "discount-amount")}
+                    onFocus={() => handleInputFocus("discount-amount")}
+                    onBlur={() =>
+                      handleDecimalBlur("discount-amount", (amount) => {
+                        applyDiscountFromAmount(amount);
+                      })
+                    }
+                    onChange={(e) => {
+                      handleDecimalInput(e.target.value, "discount-amount", (amount) => {
+                        setDiscountAmount(amount);
+                        const pct = getBasePrice() ? (amount / getBasePrice()) * 100 : 0;
+                        setDiscountPercentage(pct);
+                        setNeedsUpdate(true);
+                      });
+                    }}
+                  />
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div className="payment-schedule-section">
+            <section className="quotation-section payment-schedule-section">
               <h3 className="section-title">
                 <span className="material-symbols-outlined">payments</span>
                 Forma de Pago
               </h3>
+
+              <div className="payment-method-cards">
+                <button
+                  type="button"
+                  className={`payment-method-card ${paymentMethod === "credito_directo" ? "active" : ""}`}
+                  onClick={() => handlePaymentMethodChange("credito_directo")}
+                >
+                  <span className="material-symbols-outlined">credit_score</span>
+                  <span className="payment-method-name">Crédito directo</span>
+                  <span className="payment-method-desc">Separación, inicial y cuotas</span>
+                </button>
+                <button
+                  type="button"
+                  className={`payment-method-card ${paymentMethod === "contado" ? "active" : ""}`}
+                  onClick={() => handlePaymentMethodChange("contado")}
+                >
+                  <span className="material-symbols-outlined">account_balance_wallet</span>
+                  <span className="payment-method-name">Contado</span>
+                  <span className="payment-method-desc">Pago único con descuento</span>
+                </button>
+              </div>
+
+              {paymentMethod === "credito_directo" && estimatedMonthlyPayment > 0 && (
+                <div className="installment-preview">
+                  <span className="material-symbols-outlined">calendar_month</span>
+                  <span>
+                    Cuota estimada: <strong>{formatMoney(estimatedMonthlyPayment)}</strong>
+                    {numberOfInstallments > 0 && ` × ${numberOfInstallments} meses`}
+                  </span>
+                </div>
+              )}
               
               <div className="payment-form">
-                <div className="form-group">
-                  <label className="form-label">Modalidad</label>
-                  <select
-                    className="form-select"
-                    value={paymentMethod}
-                    onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                  >
-                    <option value="credito_directo">Crédito Directo</option>
-                    <option value="contado">Contado</option>
-                  </select>
-                </div>
 
                 {paymentMethod === "credito_directo" && (
                   <>
@@ -3368,6 +3425,7 @@ const LotInfoModal = ({
                 )}
 
                 <button
+                  type="button"
                   className="generate-schedule-btn"
                   onClick={needsUpdate ? updateSchedule : generateSchedule}
                   disabled={(paymentMethod !== "contado" && (!firstPaymentDate || numberOfInstallments === 0)) || !!dateError}
@@ -3375,7 +3433,7 @@ const LotInfoModal = ({
                   {needsUpdate ? "Actualizar Cronograma" : "Generar Cronograma"}
                 </button>
               </div>
-            </div>
+            </section>
 
             {schedule.length > 0 && (
               <div className="schedule-table">
@@ -3403,21 +3461,23 @@ const LotInfoModal = ({
             )}
 
             <div className="function-buttons">
-              <button className="function-btn" onClick={handlePrint} disabled={!functionalitiesEnabled}>
+              <button type="button" className="function-btn" onClick={handlePrint} disabled={!functionalitiesEnabled}>
                 <span className="material-symbols-outlined">print</span>
                 Imprimir
               </button>
-              <button className="function-btn" onClick={handleSave} disabled={!functionalitiesEnabled}>
+              <button type="button" className="function-btn" onClick={handleSave} disabled={!functionalitiesEnabled}>
                 <span className="material-symbols-outlined">save</span>
                 Guardar
               </button>
-              <button className="function-btn" onClick={handleEmail} disabled={!functionalitiesEnabled}>
-                <span className="material-symbols-outlined">mail</span>
-                Enviar
-              </button>
             </div>
+
+            <button type="button" className="quotation-back-bottom-btn" onClick={handleBackToLot}>
+              <span className="material-symbols-outlined">arrow_back</span>
+              Volver a información del lote
+            </button>
           </div>
         </div>
+        )}
       </div>
 
       <ContactModal
@@ -3425,7 +3485,7 @@ const LotInfoModal = ({
         type={modalType}
         onClose={() => setShowContactModal(false)}
         onSubmit={handleContactSubmit}
-        currentUser={userState}
+        currentUser={user}
         quotationCode={quotationCodeForModal}
       />
 

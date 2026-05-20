@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { UiVisibilityProvider } from "./contexts/UiVisibilityContext";
 import SplashScreen from "./Layout/SplashScreen/SplashScreen";
 import Instructions from "./Layout/Instructions/Instructions";
 import Sidebar from "./components/Sidebar/Sidebar";
@@ -16,8 +17,6 @@ import TimeOfDayControl from "./components/Overlays/TimeOfDayControl/TimeOfDayCo
 import { useWebSocket } from "./hooks/useWebSocket";
 
 function AppContent() {
-  const { user } = useAuth();
-  
   // Inicializar WebSocket para recibir actualizaciones de lotes en tiempo real
   useWebSocket();
   
@@ -426,6 +425,14 @@ function AppContent() {
     }
   };
 
+  // Exponer la función de cierre del modal de lote globalmente
+  useEffect(() => {
+    (window as any).closeLotInfoModal = handleLotInfoModalClose;
+    return () => {
+      delete (window as any).closeLotInfoModal;
+    };
+  }, [handleLotInfoModalClose]);
+
   const handlePhotos360Close = () => {
     setShowPhotos360(false);
     setPhotos360Src("");
@@ -483,7 +490,6 @@ function AppContent() {
         isVisible={showLotInfoModal}
         onClose={handleLotInfoModalClose}
         loteData={selectedLote}
-        currentUser={user}
       />
 
       {showAreasModal && (
@@ -547,7 +553,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <UiVisibilityProvider>
+        <AppContent />
+      </UiVisibilityProvider>
     </AuthProvider>
   );
 }
