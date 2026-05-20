@@ -660,25 +660,52 @@
   margin-bottom: 8px;
 }
 
-.form-select,
-.form-input,
-.date-input {
+.lot-modal-quotation {
+  color-scheme: dark;
+}
+
+.lot-modal-quotation .form-select,
+.lot-modal-quotation .form-input,
+.lot-modal-quotation .date-input,
+.lot-modal-quotation input.form-input,
+.lot-modal-quotation select.form-select,
+.lot-modal-quotation input.date-input {
   width: 100%;
   height: 44px;
-  background: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   padding: 0 12px;
   color: #ffffff;
   font-family: 'Manrope', sans-serif;
   font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-.form-select:focus,
-.form-input:focus,
-.date-input:focus {
+.lot-modal-quotation .form-select:focus,
+.lot-modal-quotation .form-input:focus,
+.lot-modal-quotation .date-input:focus,
+.lot-modal-quotation input.form-input:focus,
+.lot-modal-quotation select.form-select:focus,
+.lot-modal-quotation input.date-input:focus {
   border-color: #e9c176;
   outline: none;
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.lot-modal-quotation input.form-input:-webkit-autofill,
+.lot-modal-quotation input.date-input:-webkit-autofill,
+.lot-modal-quotation select.form-select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.3) inset;
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  transition: background-color 99999s ease-in-out 0s;
+}
+
+.lot-modal-quotation .form-select option {
+  background-color: #1e2020;
+  color: #ffffff;
 }
 
 .generate-schedule-btn {
