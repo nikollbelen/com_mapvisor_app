@@ -438,8 +438,6 @@ const LotInfoModal = ({
   // Estados para funcionalidades de botones
   const [showContactModal, setShowContactModal] = useState(false);
   const [modalType, setModalType] = useState<"print" | "save" | "email">("print");
-  const [functionalitiesEnabled, setFunctionalitiesEnabled] = useState(false);
-  
   // Estados para rastrear si ya se guardó y los datos guardados
   const [hasBeenSaved, setHasBeenSaved] = useState(false);
   const [lastSavedData, setLastSavedData] = useState<any>(null);
@@ -468,37 +466,6 @@ const LotInfoModal = ({
 
   // Usar datos del lote si están disponibles, sino usar datos por defecto
 
-  useEffect(() => {
-    // Habilitar funcionalidades solo cuando los inputs requeridos estén completos
-    let enabled = true;
-    // Debe existir un cronograma generado
-    if (!schedule || schedule.length === 0) enabled = false;
-    // Si no es contado, validar fecha inicial, número de cuotas y errores de fecha
-    if (enabled && paymentMethod !== "contado") {
-      if (!firstPaymentDate || !!dateError) enabled = false;
-      if (numberOfInstallments <= 0) enabled = false;
-    }
-    // Validar fechas para Separación si está activa (>0%)
-    if (enabled && separation?.enabled && separation.percentage > 0) {
-      const sep = schedule.find((s) => s.item === "Separación");
-      if (!sep || !sep.date) enabled = false;
-    }
-    // Validar fecha para Inicial si aplica (>0%)
-    if (enabled && initial?.percentage > 0) {
-      const ini = schedule.find((s) => s.item === "Inicial");
-      if (!ini || !ini.date) enabled = false;
-    }
-    setFunctionalitiesEnabled(enabled);
-  }, [
-    schedule,
-    paymentMethod,
-    firstPaymentDate,
-    dateError,
-    numberOfInstallments,
-    separation?.enabled,
-    separation?.percentage,
-    initial?.percentage
-  ]);
   const lotData = loteData
     ? {
         lot: formatLotLabel(loteData.direccion, loteData.phase || "1"),
@@ -2494,14 +2461,16 @@ const LotInfoModal = ({
     }
   };
 
+  const requireVendedorSession = (): boolean => {
+    if (canUseCotizador) return true;
+    setToastMessage("Debes iniciar sesión como vendedor para realizar esta acción.");
+    window.dispatchEvent(new CustomEvent("openLoginModal"));
+    setTimeout(() => setToastMessage(null), 5000);
+    return false;
+  };
+
   const handleQuotationClick = () => {
     if (normalizedLotStatus !== "disponible") return;
-    if (!canUseCotizador) {
-      setToastMessage("Inicia sesión como vendedor para usar el cotizador.");
-      window.dispatchEvent(new CustomEvent("openLoginModal"));
-      setTimeout(() => setToastMessage(null), 5000);
-      return;
-    }
     initializeQuotationDefaults();
     setShowQuotation(true);
   };
@@ -2533,6 +2502,7 @@ const LotInfoModal = ({
 
   // Funciones para los botones de funcionalidades
   const handlePrint = () => {
+    if (!requireVendedorSession()) return;
     // Generar o reutilizar código de cotización
     const code = (hasBeenSaved && lastSavedData?.quotationCode) 
       ? lastSavedData.quotationCode 
@@ -2543,6 +2513,7 @@ const LotInfoModal = ({
   };
 
   const handleSave = () => {
+    if (!requireVendedorSession()) return;
     // Generar o reutilizar código de cotización
     const code = (hasBeenSaved && lastSavedData?.quotationCode) 
       ? lastSavedData.quotationCode 
@@ -3130,13 +3101,7 @@ const LotInfoModal = ({
                 disabled={!isLotAvailable}
               >
                 <span className="material-symbols-outlined">calculate</span>
-                <span>
-                  {!isLotAvailable
-                    ? "Lote no disponible"
-                    : canUseCotizador
-                      ? "Cotizar Ahora"
-                      : "Cotizar (requiere vendedor)"}
-                </span>
+                <span>{isLotAvailable ? "Cotizar Ahora" : "Lote no disponible"}</span>
               </button>
             </div>
           </div>
@@ -3461,11 +3426,11 @@ const LotInfoModal = ({
             )}
 
             <div className="function-buttons">
-              <button type="button" className="function-btn" onClick={handlePrint} disabled={!functionalitiesEnabled}>
+              <button type="button" className="function-btn" onClick={handlePrint}>
                 <span className="material-symbols-outlined">print</span>
                 Imprimir
               </button>
-              <button type="button" className="function-btn" onClick={handleSave} disabled={!functionalitiesEnabled}>
+              <button type="button" className="function-btn" onClick={handleSave}>
                 <span className="material-symbols-outlined">save</span>
                 Guardar
               </button>
