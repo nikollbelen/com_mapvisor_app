@@ -1,1 +1,23 @@
-/* BottomBar styles now handled by Tailwind classes directly in the component */
+/* Reabrir modal entorno: derecha, encima del dock de tipos (no mueve "Ver leyenda") */
+
+.bottom-entorno-reopen-fab {
+  position: fixed;
+  right: 24px;
+  /* dock entorno bottom: 100px + ~56px alto + separación */
+  bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  z-index: 10050;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.bottom-entorno-reopen-fab:hover {
+  transform: scale(1.08);
+}

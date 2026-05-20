@@ -6,11 +6,18 @@ interface EntornoModalProps {
   isVisible?: boolean;
   onClose?: () => void;
   entornoData?: any;
+  isMinimized?: boolean;
+  onMinimizedChange?: (minimized: boolean) => void;
 }
 
-const EntornoModal = ({ isVisible = false, onClose, entornoData }: EntornoModalProps) => {
+const EntornoModal = ({
+  isVisible = false,
+  onClose,
+  entornoData,
+  isMinimized = false,
+  onMinimizedChange,
+}: EntornoModalProps) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -49,21 +56,17 @@ const EntornoModal = ({ isVisible = false, onClose, entornoData }: EntornoModalP
 
   useEffect(() => {
     if (!isVisible) {
-      setIsMinimized(false);
+      onMinimizedChange?.(false);
     }
-  }, [isVisible]);
+  }, [isVisible, onMinimizedChange]);
 
   const handleClose = () => {
-    setIsMinimized(false);
+    onMinimizedChange?.(false);
     onClose?.();
   };
 
   const handleMinimize = () => {
-    setIsMinimized(true);
-  };
-
-  const handleRestore = () => {
-    setIsMinimized(false);
+    onMinimizedChange?.(true);
   };
 
   const handleCalculateRoute = async () => {
@@ -114,20 +117,6 @@ const EntornoModal = ({ isVisible = false, onClose, entornoData }: EntornoModalP
 
   return (
     <>
-      {isMobile && isMinimized && (
-        <button
-          type="button"
-          className="hud-panel-reopen-btn hud-panel-reopen-btn--left hud-glass-panel hud-gold-edge shadow-2xl"
-          onClick={handleRestore}
-          title="Reabrir entorno"
-          aria-label="Reabrir entorno"
-        >
-          <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-            location_on
-          </span>
-        </button>
-      )}
-
       {!isMinimized && (
         <div className="hud-panel-overlay show" id="aroundModalOverlay">
           <div className="hud-panel-modal hud-glass-panel hud-gold-edge">

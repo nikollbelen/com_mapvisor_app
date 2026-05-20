@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
+import './BottomBar.css';
 
-const BottomBar = () => {
+interface BottomBarProps {
+  entornoReopenVisible?: boolean;
+  onEntornoReopen?: () => void;
+}
+
+const BottomBar = ({
+  entornoReopenVisible = false,
+  onEntornoReopen,
+}: BottomBarProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
 
@@ -66,9 +75,24 @@ const BottomBar = () => {
       {/* ============================================= */}
       {isMobile && (
         <>
-          {/* Main Content Area - Legend */}
+          {entornoReopenVisible && (
+            <button
+              type="button"
+              className="bottom-entorno-reopen-fab hud-glass-panel hud-gold-edge shadow-2xl"
+              onClick={onEntornoReopen}
+              title="Reabrir entorno"
+              aria-label="Reabrir entorno"
+            >
+              <span
+                className="material-symbols-outlined text-primary"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                location_on
+              </span>
+            </button>
+          )}
+
           <div className="fixed bottom-32 right-0 left-0 z-10 flex flex-col items-center pointer-events-none">
-            {/* Legend Panel (Toggle) */}
             {showLegend && (
               <div className="px-6 mb-4 pointer-events-auto">
                 <div className="hud-glass-panel hud-gold-edge p-4 rounded-2xl shadow-2xl space-y-3 max-w-[240px] mx-auto">
@@ -91,9 +115,9 @@ const BottomBar = () => {
                 </div>
               </div>
             )}
-            {/* Legend Toggle Button */}
             <div className="flex justify-center w-full px-6 mb-6 pointer-events-auto">
               <button
+                type="button"
                 className="flex items-center gap-2 px-6 py-3 rounded-full hud-glass-panel hud-gold-edge shadow-xl text-primary font-label-caps text-label-caps"
                 onClick={() => setShowLegend(!showLegend)}
               >

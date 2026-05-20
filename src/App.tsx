@@ -15,6 +15,7 @@ import ImageOverlay from "./components/Overlays/ImageOverlay/ImageOverlay";
 import Photos360Overlay from "./components/Overlays/Photos360Overlay/Photos360Overlay";
 import TimeOfDayControl from "./components/Overlays/TimeOfDayControl/TimeOfDayControl";
 import { useWebSocket } from "./hooks/useWebSocket";
+import "./components/Modals/shared/HudPanelModal.css";
 
 function AppContent() {
   // Inicializar WebSocket para recibir actualizaciones de lotes en tiempo real
@@ -37,6 +38,7 @@ function AppContent() {
   const [showLotSearchModal, setShowLotSearchModal] = useState(false);
   const [showEntornoButtons, setShowEntornoButtons] = useState(false);
   const [showEntornoModal, setShowEntornoModal] = useState(false);
+  const [entornoModalMinimized, setEntornoModalMinimized] = useState(false);
   const [entornoData, setEntornoData] = useState<any>(null);
   const [showVideoOverlay, setShowVideoOverlay] = useState(false);
   // Rastrear si LotSearchModal estaba abierto cuando se abrió LotInfoModal
@@ -175,6 +177,7 @@ function AppContent() {
     setShowLotSearchModal(false);
     setShowEntornoButtons(false);
     setShowEntornoModal(false);
+    setEntornoModalMinimized(false);
     setShowVideoOverlay(false);
     setPhotos360Src("");
     setAreasImageSrc("");
@@ -469,6 +472,7 @@ function AppContent() {
 
   const handleEntornoModalClose = () => {
     setShowEntornoModal(false);
+    setEntornoModalMinimized(false);
     setEntornoData(null);
     // En lugar de cerrar todo, volver al estado inicial del entorno
     // Mantener los botones y marcadores visibles
@@ -482,7 +486,10 @@ function AppContent() {
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       {showInstructions && <Instructions onClose={handleInstructionsClose} />}
       <Sidebar />
-      <BottomBar />
+      <BottomBar
+        entornoReopenVisible={showEntornoModal && entornoModalMinimized}
+        onEntornoReopen={() => setEntornoModalMinimized(false)}
+      />
       {/* LotInfoModal always rendered but controlled by isVisible */}
       <LotInfoModal
         key={
@@ -511,6 +518,8 @@ function AppContent() {
       {showEntornoModal && (
         <EntornoModal
           isVisible={showEntornoModal}
+          isMinimized={entornoModalMinimized}
+          onMinimizedChange={setEntornoModalMinimized}
           onClose={handleEntornoModalClose}
           entornoData={entornoData}
         />
