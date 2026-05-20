@@ -1,0 +1,215 @@
+/* Shell compartido — mismo aspecto que LotInfoModal */
+
+.hud-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  z-index: 9999;
+  padding: 100px 24px 24px;
+}
+
+.hud-panel-modal {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 480px;
+  background: rgba(30, 32, 32, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(197, 160, 89, 0.2);
+  border-top: 1px solid rgba(197, 160, 89, 0.4);
+  border-left: 1px solid rgba(197, 160, 89, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 140px);
+  animation: hudPanelFadeInUp 0.4s ease-out forwards;
+}
+
+@keyframes hudPanelFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hud-panel-body {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.hud-panel-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.hud-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(197, 160, 89, 0.3);
+  border-radius: 10px;
+}
+
+.hud-panel-actions {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.hud-panel-close,
+.hud-panel-minimize {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(197, 160, 89, 0.2);
+  color: #e9c176;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.hud-panel-close:hover,
+.hud-panel-minimize:hover {
+  background: rgba(197, 160, 89, 0.2);
+}
+
+.hud-panel-close:hover {
+  transform: rotate(90deg);
+}
+
+.hud-panel-minimize:hover {
+  transform: translateY(2px);
+}
+
+.hud-panel-minimize {
+  display: none;
+}
+
+.hud-panel-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.hud-panel-logo-container {
+  width: 48px;
+  height: 48px;
+  background: rgba(233, 193, 118, 0.1);
+  border: 1px solid rgba(233, 193, 118, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(233, 193, 118, 0.2);
+}
+
+.hud-panel-logo-icon {
+  font-size: 28px !important;
+  color: #e9c176;
+  font-variation-settings: "FILL" 1;
+}
+
+.hud-panel-heading {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.hud-panel-subheading {
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9a8f80;
+  text-align: center;
+  margin: 0 0 20px;
+}
+
+.hud-panel-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.hud-panel-reopen-btn {
+  position: fixed;
+  bottom: max(100px, calc(80px + env(safe-area-inset-bottom, 0px)));
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.hud-panel-reopen-btn--left {
+  right: auto;
+  left: 24px;
+}
+
+.hud-panel-reopen-btn:hover {
+  transform: scale(1.08);
+}
+
+@media (max-width: 1024px) {
+  .hud-panel-modal {
+    max-width: 100%;
+    max-height: min(90dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+    height: auto;
+    border-radius: 24px 24px 0 0;
+    background: rgba(12, 14, 14, 0.96);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+  }
+
+  .hud-panel-overlay {
+    align-items: flex-end;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(0, 0, 0, 0.52);
+    pointer-events: auto;
+  }
+
+  .hud-panel-body {
+    padding: 24px;
+    padding-top: 56px;
+  }
+
+  .hud-panel-minimize {
+    display: flex;
+  }
+}

@@ -1571,6 +1571,9 @@ function clearViewerModeState() {
   // Clear previous route if exists
   clearRoute();
 
+  // Sincronizar cierre con modales React (Áreas, Entorno, Fotos 360, etc.)
+  window.dispatchEvent(new CustomEvent("clearAllModals"));
+
   // Return to lots view
   flyToLotesView();
 }

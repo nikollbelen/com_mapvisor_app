@@ -1,79 +1,28 @@
-/* ===== PREMIUM AREAS MODAL STYLES ===== */
+/* Contenido — shell en HudPanelModal.css */
 
-.common-areas-modal {
-  position: fixed;
-  top: 100px;
-  right: 24px;
-  width: 420px;
-  max-height: calc(100vh - 140px);
-  padding: 24px;
-  z-index: 100;
+.areas-modal-content {
   display: flex;
   flex-direction: column;
-  animation: modalFadeInUp 0.4s ease-out forwards;
-  border-radius: 20px;
 }
 
-.areas-close-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #9a8f80;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+.areas-cards-list {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.areas-close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #e2e2e2;
-  transform: rotate(90deg);
-}
-
-.common-areas-modal-header {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-}
-
-.common-areas-modal-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.common-areas-modal-content {
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.common-areas-modal-content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.common-areas-modal-content::-webkit-scrollbar-thumb {
-  background: #e9c176;
-  border-radius: 10px;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .areas-card {
-  margin-bottom: 16px;
   overflow: hidden;
   border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
   transition: all 0.3s ease;
 }
 
 .areas-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   border-color: rgba(233, 193, 118, 0.3);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .areas-card-image {
@@ -89,7 +38,7 @@
 }
 
 .areas-card-title {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: #e2e2e2;
@@ -101,11 +50,12 @@
   gap: 8px;
 }
 
-.areas-btn-primary, .areas-btn-secondary {
+.areas-btn-primary,
+.areas-btn-secondary {
   flex: 1;
   padding: 10px;
   border-radius: 10px;
-  font-family: 'Manrope', sans-serif;
+  font-family: "Manrope", sans-serif;
   font-size: 11px;
   font-weight: 700;
   display: flex;
@@ -138,57 +88,9 @@
   color: #e9c176;
 }
 
-.no-data-text {
+.areas-no-data {
   text-align: center;
   color: #9a8f80;
   padding: 40px 0;
-  font-family: 'Manrope', sans-serif;
-}
-
-.reopen-areas-modal-btn {
-  position: fixed;
-  bottom: 140px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.reopen-areas-modal-btn:hover {
-  transform: scale(1.1);
-}
-
-@media (max-width: 1024px) {
-  .common-areas-modal {
-    top: auto;
-    bottom: max(16px, env(safe-area-inset-bottom, 0px));
-    right: 16px;
-    left: 16px;
-    width: auto;
-    max-width: 480px;
-    margin: 0 auto;
-    max-height: min(70dvh, calc(100dvh - 120px));
-    overflow: hidden;
-    background: rgba(12, 14, 14, 0.96);
-    backdrop-filter: blur(26px);
-    -webkit-backdrop-filter: blur(26px);
-  }
-
-  .common-areas-modal.mobile-modal {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .common-areas-modal-content.mobile-modal-content {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  font-family: "Manrope", sans-serif;
 }

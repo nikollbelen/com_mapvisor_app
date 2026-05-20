@@ -33,6 +33,16 @@
   font-weight: 800;
 }
 
+.topbar-nav-btn--active .material-symbols-outlined {
+  color: #412d00;
+}
+
+.topbar-nav-btn--active:hover,
+.topbar-nav-btn--active:hover .font-label-caps,
+.topbar-nav-btn--active:hover .material-symbols-outlined {
+  color: #e9c176;
+}
+
 /* Menú móvil — altura de pantalla + scroll interno */
 
 .mobile-menu-overlay {

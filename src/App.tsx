@@ -178,6 +178,7 @@ function AppContent() {
     setShowVideoOverlay(false);
     setPhotos360Src("");
     setAreasImageSrc("");
+    setAreasData(null);
     setEntornoData(null);
   };
 
