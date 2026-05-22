@@ -69,19 +69,34 @@ const EntornoModal = ({
     onMinimizedChange?.(true);
   };
 
+  const parseLonLat = (coords: unknown): [number, number] | null => {
+    if (!coords || typeof coords === 'string' && coords.includes('no disponibles')) {
+      return null;
+    }
+    const values = Array.isArray(coords)
+      ? coords
+      : String(coords)
+          .split(',')
+          .map((coord) => parseFloat(coord.trim()));
+    if (values.length < 2 || values.some((value) => Number.isNaN(value))) {
+      return null;
+    }
+    return [values[0], values[1]];
+  };
+
   const handleCalculateRoute = async () => {
     setShowTimeEstimate(true);
 
-    if (window.calculateRoute && data.coordinates) {
-      const token = import.meta.env.VITE_OPEN_ROUTE_SERVICE_KEY;
-      const projectLonLat = [-71.51364042644347, -17.257430143234867];
-      const environmentCoords = Array.isArray(data.coordinates)
-        ? data.coordinates
-        : data.coordinates.split(',').map((coord: string) => parseFloat(coord.trim()));
+    const environmentLonLat = parseLonLat(data.coordinates);
+    const projectLonLat = window.getProjectMainMarkerLonLat?.() ?? null;
 
+    if (window.calculateRoute && environmentLonLat && projectLonLat) {
+      const token = import.meta.env.VITE_OPEN_ROUTE_SERVICE_KEY;
+
+      // Origen: marcador de entorno seleccionado → destino: marcador principal del proyecto
       const result = await window.calculateRoute(
         token,
-        environmentCoords,
+        environmentLonLat,
         projectLonLat,
         data.tipo
       );
@@ -93,6 +108,8 @@ const EntornoModal = ({
       } else {
         setTimeEstimate('Error al calcular la ruta');
       }
+    } else {
+      setTimeEstimate('No se pudo obtener la ubicación de origen o destino');
     }
   };
 

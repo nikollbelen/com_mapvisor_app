@@ -11,7 +11,8 @@
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  /* Por encima del modal HUD de áreas comunes (9999) y del botón reabrir móvil (10050) */
+  z-index: 10100;
   opacity: 0;
   transition: opacity 0.4s ease;
 }

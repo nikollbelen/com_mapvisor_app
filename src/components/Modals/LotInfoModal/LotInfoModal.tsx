@@ -11,6 +11,7 @@ import jsPDF from 'jspdf';
 import "./LotInfoModal.css";
 import ContactModal from "../ContactModal/ContactModal";
 import { useAuth } from "../../../contexts/AuthContext";
+import { getLotStatusBadgeStyle } from "../../../constants/lotStatusColors";
 
 interface LotInfoModalProps {
   isVisible?: boolean;
@@ -490,25 +491,7 @@ const LotInfoModal = ({
       }
     : defaultLotData;
   const normalizedLotStatus = (lotData.status || "").toLowerCase();
-  const statusColorConfig: Record<string, { background: string; border: string }> = {
-    disponible: {
-      background: "rgba(240, 230, 140, 0.15)",
-      border: "#F0E68C",
-    },
-    reservado: {
-      background: "rgba(240, 128, 128, 0.15)",
-      border: "#F08080",
-    },
-    negociacion: {
-      background: "rgba(255, 179, 71, 0.15)",
-      border: "#FFB347",
-    },
-    vendido: {
-      background: "rgba(135, 206, 250, 0.15)",
-      border: "#87CEFA",
-    },
-  };
-  const statusColors = statusColorConfig[normalizedLotStatus] || statusColorConfig.vendido;
+  const statusBadgeStyle = getLotStatusBadgeStyle(normalizedLotStatus);
   const statusDisplayMap: Record<string, string> = {
     disponible: "Disponible",
     reservado: "Reservado",
@@ -520,7 +503,7 @@ const LotInfoModal = ({
 
   // Constantes para la API de cotizaciones
   const BASE_API = import.meta.env.VITE_API_BASE_URL;
-  const PROJECT_ID = import.meta.env.VITE_PROJECT_ID; // ID del proyecto LOMAS DE JESUS
+  const PROJECT_ID = import.meta.env.VITE_PROJECT_ID; // ID del proyecto NAUTIA CONDOMINOS
   const LOT_ID = loteData?.id; // ID del lote actual desde la API
 
   const handleClose = () => {
@@ -2686,7 +2669,7 @@ const LotInfoModal = ({
       <body>
         <div class="pdf-header">
           <div class="logo-wrapper">
-            <h1 class="project-text-logo medium">MVP Lomas de Jesús</h1>
+            <h1 class="project-text-logo medium">MVP Nautia Condominios</h1>
           </div>
         </div>
         <div class="header">
@@ -3015,10 +2998,11 @@ const LotInfoModal = ({
               <div className="lot-stage-badge">Etapa {lotData.phase || "1"}</div>
               <div
                 className="lot-status-badge"
-                style={{ 
-                  backgroundColor: statusColors.background,
-                  color: statusColors.border,
-                  border: `1px solid ${statusColors.border}`
+                style={{
+                  backgroundColor: statusBadgeStyle.backgroundColor,
+                  color: statusBadgeStyle.color,
+                  border: `1px solid ${statusBadgeStyle.borderColor}`,
+                  boxShadow: `0 0 10px ${statusBadgeStyle.color}40`,
                 }}
                 id="modalStatus"
               >

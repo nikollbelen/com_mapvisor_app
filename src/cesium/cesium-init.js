@@ -1,4 +1,5 @@
 // Cesium configuration
+import { LOT_STATUS_COLORS, normalizeLotStatus } from "../constants/lotStatusColors";
 
 Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_TOKEN;
 // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
@@ -89,6 +90,144 @@ function applySelectedLotMaterial(entity) {
   }
 }
 
+function clearSelectedLotHighlight() {
+  if (!selected) return;
+
+  const previous = selected;
+  const base = previous._baseMaterial || selectedOriginalMaterial;
+  if (base && previous.polygon) {
+    previous.polygon.material = base;
+  }
+  if (previous.polyline) {
+    previous.polyline.width = 4;
+    const estadoProp = previous.properties?.estado;
+    const estadoValue =
+      typeof estadoProp?.getValue === "function"
+        ? estadoProp.getValue()
+        : estadoProp;
+    previous.polyline.material = createGlowMaterial(
+      getStatusGlowColor(estadoValue),
+      0.25
+    );
+  }
+
+  selected = null;
+  selectedOriginalMaterial = null;
+}
+
+function focusLotEntity(entity) {
+  if (!entity?.polygon) return;
+
+  clearSelectedLotHighlight();
+
+  selected = entity;
+  selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
+  applySelectedLotMaterial(entity);
+
+  if (viewer) viewer.scene.requestRender();
+}
+
+function getEntityProp(entity, key) {
+  if (!entity?.properties) return undefined;
+  const prop = entity.properties[key];
+  if (prop == null) return undefined;
+  return typeof prop.getValue === "function" ? prop.getValue() : prop;
+}
+
+function findLotEntityByFid(fid) {
+  if (!lotesDataSource || fid == null) return null;
+  const fidKey = String(fid);
+  return (
+    lotesDataSource.entities.values.find((entity) => {
+      if (!entity.polygon) return false;
+      const entityFid = getEntityProp(entity, "fid");
+      return entityFid != null && String(entityFid) === fidKey;
+    }) || null
+  );
+}
+
+function findLotEntityByNumber(lotNumber) {
+  if (!lotesDataSource || !lotNumber) return null;
+
+  const normalized = String(lotNumber).trim();
+  const entities = lotesDataSource.entities.values;
+
+  const byDireccion = entities.find((entity) => {
+    if (!entity.polygon) return false;
+    const direccion = getEntityProp(entity, "direccion");
+    const number = getEntityProp(entity, "number");
+    return direccion === normalized || number === normalized;
+  });
+  if (byDireccion) return byDireccion;
+
+  let manzana = "";
+  let loteNum = "";
+
+  if (normalized.toLowerCase().startsWith("parcela")) {
+    manzana = "Parcela";
+    loteNum = normalized.split(/\s+/)[1] || "";
+  } else {
+    const manzanaMatch = normalized.match(/Mz\.\s*([A-Za-z0-9]+)/i);
+    const loteMatch = normalized.match(/Lote\s*(\d+)/i);
+    manzana = manzanaMatch ? manzanaMatch[1] : "";
+    loteNum = loteMatch ? loteMatch[1] : "";
+  }
+
+  return (
+    entities.find((entity) => {
+      if (!entity.polygon) return false;
+      return (
+        getEntityProp(entity, "manzana") === manzana &&
+        String(getEntityProp(entity, "lote")) === String(loteNum)
+      );
+    }) || null
+  );
+}
+
+function buildLoteSelectedDetail(entity) {
+  const getter = (fn, fallback) =>
+    typeof fn === "function" ? fn(entity) : fallback(entity);
+
+  return {
+    entity,
+    direccion: getter(window.getDireccion, (e) => getEntityProp(e, "direccion")),
+    area: getter(window.getArea, (e) => getEntityProp(e, "area")),
+    precio: getter(window.getPrecio, (e) => getEntityProp(e, "precio")),
+    estado: getter(window.getEstado, (e) => getEntityProp(e, "estado")),
+    boundaries: getter(window.getColindancias, () => ({})),
+    id: getter(window.getId, (e) => getEntityProp(e, "fid")),
+    phase: getter(window.getPhase, () => "1"),
+  };
+}
+
+function selectLotOnMap(entity, { toggleIfSame = false } = {}) {
+  if (!entity?.polygon || isLotSelectionBlocked()) return false;
+
+  const loteValue = getEntityProp(entity, "lote");
+  if (loteValue === "") return false;
+
+  if (toggleIfSame && selected === entity) {
+    if (window.closeLotInfoModal) {
+      window.closeLotInfoModal();
+    } else {
+      reiniciarMenu();
+    }
+    return true;
+  }
+
+  clearModalsForLotSelection();
+  setMapViewerMode("lotes");
+  focusLotEntity(entity);
+
+  window.dispatchEvent(
+    new CustomEvent("loteSelected", {
+      detail: buildLoteSelectedDetail(entity),
+    })
+  );
+
+  return true;
+}
+
 // Functions to detect device type and adjust label properties
 function getDeviceType() {
   const width = window.innerWidth;
@@ -140,41 +279,16 @@ function getLabelOutlineWidth() {
   }
 }
 
-// Lot colors - Paleta Neón Premium
-const disponible = window.Cesium.Color.fromCssColorString("#CCFF00"); // Verde Neón / Yellow-green
-const reservado = window.Cesium.Color.fromCssColorString("#FF1493");  // Rosa Neón
-const vendido = window.Cesium.Color.fromCssColorString("#00E5FF");    // Celeste / Cian Neón
-const negociacion = window.Cesium.Color.fromCssColorString("#FF5E00"); // Naranja Neón
 const modeSelected = window.Cesium.Color.fromCssColorString("#FFFFFF");
 
 function getStatusColor(status) {
-  const normalizedStatus = (status || "").toString().toLowerCase();
-  switch (normalizedStatus) {
-    case "reservado":
-      return reservado;
-    case "vendido":
-      return vendido;
-    case "negociacion":
-      return negociacion;
-    case "disponible":
-    default:
-      return disponible;
-  }
+  const key = normalizeLotStatus(status);
+  return window.Cesium.Color.fromCssColorString(LOT_STATUS_COLORS[key].hex);
 }
 
 function getStatusGlowColor(status) {
-  const normalizedStatus = (status || "").toString().toLowerCase();
-  switch (normalizedStatus) {
-    case "reservado":
-      return window.Cesium.Color.fromCssColorString("#FF66CC"); // Glow rosa claro
-    case "vendido":
-      return window.Cesium.Color.fromCssColorString("#00FFFF"); // Glow cian puro
-    case "negociacion":
-      return window.Cesium.Color.fromCssColorString("#FF8C00"); // Glow naranja brillante
-    case "disponible":
-    default:
-      return window.Cesium.Color.fromCssColorString("#EEFF55"); // Glow verde-amarillo neón
-  }
+  const key = normalizeLotStatus(status);
+  return window.Cesium.Color.fromCssColorString(LOT_STATUS_COLORS[key].glowHex);
 }
 
 function getHDRColor(color, intensity = 5.0) {
@@ -317,7 +431,7 @@ function compareLotsByLocation(a, b, isAscending = true) {
 // Load custom map image
 try {
   viewer.imageryLayers.addImageryProvider(
-    await window.Cesium.IonImageryProvider.fromAssetId(4026748)
+    await window.Cesium.IonImageryProvider.fromAssetId(4822551)
   );
 } catch (error) {
   console.error("❌ Error loading map image:", error);
@@ -325,24 +439,11 @@ try {
 
 async function loadLotesData() {
   try {
-    const [resp1, resp2] = await Promise.all([
-      fetch("./data/lotes.geojson"),
-      fetch("./data/lotesv2.geojson")
-    ]);
-    const data1 = await resp1.json();
-    const data2 = await resp2.json();
-
-    // Marcar los lotes de la versión 2 para que solo estos sean filtrables
-    if (data2.features) {
-      data2.features.forEach(f => {
-        if (f.properties) f.properties._isV2 = true;
-      });
+    const resp = await fetch("./data/lotesv2.geojson");
+    if (!resp.ok) {
+      throw new Error(`No se pudo cargar lotesv2.geojson (${resp.status})`);
     }
-
-    lotesData = {
-      ...data1,
-      features: [...(data1.features || []), ...(data2.features || [])]
-    };
+    lotesData = await resp.json();
 
     // 1) Obtener propiedades desde API por POST y mapear por fid (manteniendo geometrías locales)
     fidToApiProps.clear(); // Limpiar el Map antes de cargar nuevos datos
@@ -411,7 +512,6 @@ async function loadLotesData() {
       });
     }
 
-    // Extract all polygon positions for flyToView
     lotesPositions = extractLotesPositions(lotesData);
     // Agregar modelo 3D centrado usando el contorno del proyecto
     //addTreeModelAtCenter();
@@ -419,7 +519,7 @@ async function loadLotesData() {
     // Process and format lot data once
     const feats = lotesData.features || [];
     processedLots = feats
-      .filter((f) => f && f.properties && f.properties._isV2) // Solo filtrar lotes de lotesv2.geojson
+      .filter((f) => f && f.properties)
       .filter((f) => {
         const p = f.properties || {};
         const number = p.number || "";
@@ -457,6 +557,7 @@ async function loadLotesData() {
         const blockCode = normalizeBlockValue(manzana, direccion);
         const lotIndex = normalizeLotNumberValue(lote, direccion);
         return {
+          fid: p.fid,
           id: p.direccion || `${idx}`,
           number:
             p.direccion ||
@@ -534,10 +635,13 @@ async function loadLotesData() {
       }
     });
 
-    // Add Mykonos marker
-    const referencePoint = window.Cesium.Cartesian3.fromDegrees(-71.51364042644347, -17.257430143234867);
-    const MAX_DISTANCE = 20000;
-    const MARKER_SHOW_DISTANCE = 10300;
+    // Centro del proyecto según lotesv2.geojson (etiquetas, marcador Mykonos, etc.)
+    const referencePoint =
+      lotesPositions.length > 0
+        ? window.Cesium.BoundingSphere.fromPoints(lotesPositions).center
+        : window.Cesium.Cartesian3.fromDegrees(-71.8925, -17.1165, 0);
+    const MAX_DISTANCE = 2000;
+    const MARKER_SHOW_DISTANCE = 2500;
     const mykonosMarker = viewer.entities.add({
       id: "mykonos_marker",
       name: "Mykonos",
@@ -647,7 +751,7 @@ async function loadLotesData() {
         const loteValue = e.properties.lote ? e.properties.lote.getValue() : "";
         if (loteValue === "") {
           // For empty lots, make completely transparent
-          e.polygon.material = disponible.withAlpha(0);
+          e.polygon.material = getStatusColor("disponible").withAlpha(0);
           e.polygon.height = 0.1;
           e.polygon.heightReference =
             window.Cesium.HeightReference.RELATIVE_TO_GROUND;
@@ -719,7 +823,7 @@ async function loadLotesData() {
     }));
     console.log('✅ Evento cesiumReady disparado');
   } catch (error) {
-    console.error("Error loading lotes.geojson:", error);
+    console.error("Error loading lotesv2.geojson:", error);
   }
 }
 
@@ -853,7 +957,7 @@ function updateLotFromWebSocket(lotData) {
     if (lotesData && Array.isArray(lotesData.features)) {
       const feats = lotesData.features || [];
       processedLots = feats
-        .filter((f) => f && f.properties && f.properties._isV2) // Solo filtrar lotes de lotesv2.geojson
+        .filter((f) => f && f.properties)
         .filter((f) => {
           const p = f.properties || {};
           const number = p.number || "";
@@ -891,6 +995,7 @@ function updateLotFromWebSocket(lotData) {
           const blockCode = normalizeBlockValue(manzana, direccion);
           const lotIndex = normalizeLotNumberValue(lote, direccion);
           return {
+            fid: p.fid,
             id: p.direccion || `${idx}`,
             number:
               p.direccion ||
@@ -1194,40 +1299,7 @@ function setupLoteInteractions() {
       return;
     }
 
-    // Si ya está seleccionado, deseleccionar
-    if (selected === entity) {
-      if (window.closeLotInfoModal) {
-        window.closeLotInfoModal();
-      } else {
-        reiniciarMenu();
-      }
-      return;
-    }
-
-    clearModalsForLotSelection();
-    setMapViewerMode("lotes");
-
-    selected = entity;
-    selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
-    applySelectedLotMaterial(entity);
-
-    viewer.scene.requestRender();
-
-    // Disparar evento para mostrar modal del lote
-    window.dispatchEvent(
-      new CustomEvent("loteSelected", {
-        detail: {
-          entity: entity,
-          direccion: getDireccion(entity),
-          area: getArea(entity),
-          precio: getPrecio(entity),
-          estado: getEstado(entity),
-          boundaries: getColindancias(entity),
-          id: getId(entity),
-          phase: getPhase(entity),
-        },
-      })
-    );
+    selectLotOnMap(entity, { toggleIfSame: true });
   }, window.Cesium.ScreenSpaceEventType.LEFT_CLICK);
 }
 
@@ -1279,37 +1351,51 @@ function extractLotesPositions(lotesData) {
 // Global functions
 
 function flyToLotesView() {
-  // Coordenadas solicitadas por el usuario: -17.25965841506538, -71.51257268566977
-  const longitude = -71.51457268566977;
-  const latitude = -17.26265841506538;
-  const height = 10200; // Altura solicitada por el usuario
+  if (!viewer) return;
 
-  if (viewer) {
-    viewer.camera.flyTo({
-      destination: window.Cesium.Cartesian3.fromDegrees(longitude, latitude, height),
-      orientation: {
-        heading: window.Cesium.Math.toRadians(0.0),
-        pitch: window.Cesium.Math.toRadians(-90.0),
-        roll: 0.0
-      },
-      duration: 2.5
-    });
+  if (lotesPositions.length > 0) {
+    flyToView(lotesPositions);
+    return;
   }
+
+  // Respaldo si aún no hay geometrías cargadas
+  viewer.camera.flyTo({
+    destination: window.Cesium.Cartesian3.fromDegrees(-71.8925, -17.1165, 1200),
+    orientation: {
+      heading: window.Cesium.Math.toRadians(0.0),
+      pitch: window.Cesium.Math.toRadians(-90.0),
+      roll: 0.0,
+    },
+    duration: 2.5,
+  });
 }
 
-function flyToView(positions) {
+const LOTES_VIEW_RANGE_MULTIPLIER = 3.8;
+const MARKERS_VIEW_RANGE_MULTIPLIER = 7.5;
+const MARKERS_VIEW_MIN_RANGE = 750;
+
+function flyToView(positions, { forMarkers = false } = {}) {
   if (!viewer || !positions || positions.length === 0) return;
 
   const boundingSphere = window.Cesium.BoundingSphere.fromPoints(positions);
-  // Ajustar la vista para mostrar todos los marcadores
+  const rangeMultiplier = forMarkers
+    ? MARKERS_VIEW_RANGE_MULTIPLIER
+    : LOTES_VIEW_RANGE_MULTIPLIER;
+  const minRange = forMarkers ? MARKERS_VIEW_MIN_RANGE : 0;
+  const range = Math.max(boundingSphere.radius * rangeMultiplier, minRange);
+
   viewer.camera.flyToBoundingSphere(boundingSphere, {
     duration: 1.5,
     offset: new window.Cesium.HeadingPitchRange(
       0.0,
       window.Cesium.Math.toRadians(-90),
-      boundingSphere.radius * 3.8
+      range
     ),
   });
+}
+
+function flyToMarkersView(positions) {
+  flyToView(positions, { forMarkers: true });
 }
 
 // Agrega el modelo GLB de árbol en el centro del proyecto
@@ -1541,19 +1627,7 @@ function clearViewerModeState() {
   if (aroundButtonsContainer) aroundButtonsContainer.style.display = "none";
   if (aroundModalOverlay) aroundModalOverlay.style.display = "none";
 
-  // Clear selected lot state using global function
-  if (selected) {
-    const base = selected._baseMaterial || selectedOriginalMaterial;
-    if (base) selected.polygon.material = base;
-    if (selected.polyline) {
-      selected.polyline.width = 4; // Restaurar a base
-      const estadoProp = selected.properties?.estado;
-      const estadoValue = typeof estadoProp?.getValue === "function" ? estadoProp.getValue() : estadoProp;
-      selected.polyline.material = createGlowMaterial(getStatusGlowColor(estadoValue), 0.25);
-    }
-  }
-  selected = null;
-  selectedOriginalMaterial = null;
+  clearSelectedLotHighlight();
   if (viewer) viewer.scene.requestRender();
 
   // Clear ALL markers when changing mode
@@ -1648,7 +1722,7 @@ async function handleFotos() {
       clickMarcadores360();
 
       if (positions.length > 0) {
-        flyToView(positions);
+        flyToMarkersView(positions);
       }
     }
   } catch (error) {
@@ -1775,7 +1849,7 @@ async function handleAreasComunes() {
       });
 
       if (positions.length > 0) {
-        flyToView(positions);
+        flyToMarkersView(positions);
       }
 
       // Configure hover events for markers
@@ -1851,8 +1925,8 @@ function flyToAreaComun(fid) {
         duration: 1.5,
         offset: new window.Cesium.HeadingPitchRange(
           0,
-          window.Cesium.Math.toRadians(-45),
-          0
+          window.Cesium.Math.toRadians(-50),
+          Math.max(boundingSphere.radius * 8, MARKERS_VIEW_MIN_RANGE)
         ),
       });
     } else {
@@ -2011,106 +2085,26 @@ function renderLotCards(lots) {
                 <span class="lot-card-label">Área</span>
                 <span class="lot-card-value">${lot.area.toFixed(2)} m²</span>
               </div>
-              <button class="lot-card-view-more-btn" onclick="handleLotCardClick('${lot.number
-      }')">
-                Ver más <i class="fas fa-arrow-right"></i>
+              <button type="button" class="lot-card-view-more-btn" onclick="handleLotCardClick(${lot.fid})">
+                Ver <i class="fas fa-arrow-right"></i>
               </button>
             `;
     container.appendChild(card);
   });
 }
 
-window.handleLotCardClick = function (lotNumber) {
-  clearModalsForLotSelection();
-  setMapViewerMode("lotes");
-
-  // Buscar la entidad del lote en el datasource de Cesium
-  const allEntities = viewer.dataSources.get(0).entities.values;
-
-  // Extraer manzana y lote del lot.number
-  const lot = lotNumber; // "Mz. E - Lote 15" o "Parcela 1"
-
-  let manzana = "";
-  let loteNum = "";
-
-  if (lot.toLowerCase().startsWith("parcela")) {
-    manzana = "Parcela";
-    loteNum = lot.split(" ")[1];
-  } else {
-    const manzanaMatch = lot.match(/Mz\.\s*([A-Za-z0-9]+)/i);
-    const loteMatch = lot.match(/Lote\s*(\d+)/);
-    manzana = manzanaMatch ? manzanaMatch[1] : "";
-    loteNum = loteMatch ? loteMatch[1] : "";
-  }
-
-  // Buscar por manzana y lote en las propiedades
-  const lotEntity = allEntities.find((entity) => {
-    if (!entity.properties) return false;
-
-    const entityManzana = entity.properties.manzana
-      ? entity.properties.manzana._value
-      : "";
-    const entityLote = entity.properties.lote
-      ? entity.properties.lote._value
-      : "";
-
-    return entityManzana === manzana && entityLote === loteNum;
-  });
+window.handleLotCardClick = function (lotRef) {
+  const lotEntity =
+    typeof lotRef === "number" || /^\d+$/.test(String(lotRef))
+      ? findLotEntityByFid(lotRef)
+      : findLotEntityByNumber(lotRef);
 
   if (lotEntity) {
-    // Deseleccionar el lote anteriormente seleccionado
-    if (selected) {
-      selected.polygon.material = selectedOriginalMaterial;
-      selected = null;
-      selectedOriginalMaterial = null;
-    }
-
-    // Seleccionar el nuevo lote
-    selected = lotEntity;
-    selectedOriginalMaterial =
-      lotEntity._baseMaterial || lotEntity.polygon.material;
-    applySelectedLotMaterial(lotEntity);
-
-    // Volar hacia el lote
-    viewer.flyTo(lotEntity, {
-      duration: 2,
-      offset: new window.Cesium.HeadingPitchRange(
-        0,
-        window.Cesium.Math.toRadians(-45),
-        500
-      ),
-    });
-
-    // Disparar evento para mostrar modal del lote
-    window.dispatchEvent(
-      new CustomEvent("loteSelected", {
-        detail: {
-          entity: lotEntity,
-          direccion: getDireccion(lotEntity),
-          area: getArea(lotEntity),
-          precio: getPrecio(lotEntity),
-          estado: getEstado(lotEntity),
-          boundaries: getColindancias(lotEntity),
-          id: getId(lotEntity),
-          phase: getPhase(lotEntity),
-        },
-      })
-    );
-  } else {
-    console.error("No se encontró la entidad del lote con ID:", lotId);
-    console.log(
-      "Primeras 5 entidades con propiedades:",
-      allEntities.slice(0, 5).map((e) => ({
-        id: e.id,
-        properties: e.properties
-          ? Object.keys(e.properties).reduce((acc, key) => {
-            acc[key] = e.properties[key]._value;
-            return acc;
-          }, {})
-          : null,
-      }))
-    );
+    selectLotOnMap(lotEntity, { toggleIfSame: false });
+    return;
   }
+
+  console.error("No se encontró la entidad del lote:", lotRef);
 };
 
 function loadLotData() {
@@ -2207,7 +2201,7 @@ function resetEntornoToInitialState() {
   });
 
   if (positions.length > 0) {
-    flyToView(positions);
+    flyToMarkersView(positions);
   }
 
   // Activate "Todos" button
@@ -2314,7 +2308,7 @@ async function loadEntornoMarkers(filterType = null) {
       clickMarcadoresAround();
 
       // Adjust camera to show all markers
-      flyToView(positions);
+      flyToMarkersView(positions);
     }
   } catch (error) {
     console.error("Error al cargar los marcadores del entorno:", error);
@@ -2381,6 +2375,34 @@ function showLocationModal(title, coordinates, tipo = null, imagen = null) {
       },
     })
   );
+}
+
+/** [lon, lat] del marcador principal del proyecto (Mykonos / centro de lotesv2). */
+function getProjectMainMarkerLonLat() {
+  if (viewer) {
+    const marker = viewer.entities.getById("mykonos_marker");
+    if (marker?.position) {
+      const pos = marker.position.getValue(viewer.clock.currentTime);
+      if (pos) {
+        const carto = window.Cesium.Cartographic.fromCartesian(pos);
+        return [
+          window.Cesium.Math.toDegrees(carto.longitude),
+          window.Cesium.Math.toDegrees(carto.latitude),
+        ];
+      }
+    }
+  }
+
+  if (lotesPositions.length > 0) {
+    const center = window.Cesium.BoundingSphere.fromPoints(lotesPositions).center;
+    const carto = window.Cesium.Cartographic.fromCartesian(center);
+    return [
+      window.Cesium.Math.toDegrees(carto.longitude),
+      window.Cesium.Math.toDegrees(carto.latitude),
+    ];
+  }
+
+  return [-71.8925, -17.1165];
 }
 
 // Function to calculate and show route
@@ -2456,13 +2478,16 @@ async function calculateRoute(token, start, end, tipo = null) {
       },
     });
 
-    // Move camera to frame everything
+    const routeViewRange = Math.max(
+      boundingSphere.radius * MARKERS_VIEW_RANGE_MULTIPLIER,
+      MARKERS_VIEW_MIN_RANGE
+    );
     viewer.camera.flyToBoundingSphere(boundingSphere, {
       duration: 2,
       offset: new window.Cesium.HeadingPitchRange(
-        window.Cesium.Math.toRadians(0), // horizontal orientation
-        window.Cesium.Math.toRadians(-30), // downward tilt
-        boundingSphere.radius * 5 // distance so the entire route fits
+        window.Cesium.Math.toRadians(0),
+        window.Cesium.Math.toRadians(-35),
+        routeViewRange
       ),
     });
 
@@ -2520,41 +2545,14 @@ function closeVideoOverlay() {
 // Función para seleccionar un lote por entidad (usada desde URL highlight)
 function selectLotByEntity(entity) {
   if (!entity || !entity.polygon) return;
-  if (isLotSelectionBlocked()) return;
-
-  const fid = getFid(entity);
-  if (fid === undefined) return;
-
-  clearModalsForLotSelection();
-  setMapViewerMode("lotes");
-
-  selected = entity;
-  selectedOriginalMaterial = entity._baseMaterial || entity.polygon.material;
-  applySelectedLotMaterial(entity);
-
-  viewer.scene.requestRender();
-
-  // Disparar evento para mostrar modal del lote
-  window.dispatchEvent(
-    new CustomEvent("loteSelected", {
-      detail: {
-        entity: entity,
-        direccion: getDireccion(entity),
-        area: getArea(entity),
-        precio: getPrecio(entity),
-        estado: getEstado(entity),
-        boundaries: getColindancias(entity),
-        id: getId(entity),
-        phase: getPhase(entity),
-      },
-    })
-  );
+  selectLotOnMap(entity, { toggleIfSame: false });
 }
 
 // Expose additional functions globally
 window.hoverMarcadores = hoverMarcadores;
 window.clearRoute = clearRoute;
 window.flyToView = flyToView;
+window.flyToMarkersView = flyToMarkersView;
 window.reiniciarMenu = reiniciarMenu;
 window.handleFotos = handleFotos;
 window.handleAreasComunes = handleAreasComunes;
@@ -2577,6 +2575,7 @@ window.loadEntornoMarkers = loadEntornoMarkers;
 window.clickMarcadoresAround = clickMarcadoresAround;
 window.showLocationModal = showLocationModal;
 window.calculateRoute = calculateRoute;
+window.getProjectMainMarkerLonLat = getProjectMainMarkerLonLat;
 window.updateEntornoButtonsState = updateEntornoButtonsState;
 window.resetEntornoToInitialState = resetEntornoToInitialState;
 window.closeVideoOverlay = closeVideoOverlay;
@@ -2671,16 +2670,27 @@ function goHome() {
 }
 
 function view3D() {
+  if (!viewer) return;
+
+  if (lotesPositions.length > 0) {
+    const boundingSphere = window.Cesium.BoundingSphere.fromPoints(lotesPositions);
+    viewer.camera.flyToBoundingSphere(boundingSphere, {
+      duration: 2.0,
+      offset: new window.Cesium.HeadingPitchRange(
+        window.Cesium.Math.toRadians(35),
+        window.Cesium.Math.toRadians(-38),
+        Math.max(boundingSphere.radius * 4.5, 350)
+      ),
+    });
+    return;
+  }
+
   viewer.camera.flyTo({
-    destination: new window.Cesium.Cartesian3(
-      1932445.7816559705,
-      -5778028.29796722,
-      -1887993.652004142
-    ),
+    destination: window.Cesium.Cartesian3.fromDegrees(-71.8925, -17.1165, 900),
     orientation: {
-      heading: 6.283185307179582,
-      pitch: -0.2728361832211268,
-      roll: 6.2831853071795605,
+      heading: window.Cesium.Math.toRadians(35),
+      pitch: window.Cesium.Math.toRadians(-38),
+      roll: 0,
     },
     duration: 2.0,
   });
@@ -2713,8 +2723,8 @@ function toggleGrid() {
   entitiesAll.forEach((e) => {
     const loteValue = e.properties.lote ? e.properties.lote.getValue() : "";
     if (loteValue === "") {
-      e.polygon.material = disponible.withAlpha(0);
-      e._baseMaterial = disponible.withAlpha(0);
+      e.polygon.material = getStatusColor("disponible").withAlpha(0);
+      e._baseMaterial = getStatusColor("disponible").withAlpha(0);
       return;
     }
 
@@ -2768,12 +2778,11 @@ function setTimeOfDay(hour) {
 
     // Obtener la posición central del proyecto para calcular la hora solar
     let centerPosition = null;
-    if (lotesPositions && lotesPositions.length > 0) {
+    if (lotesPositions.length > 0) {
       const boundingSphere = window.Cesium.BoundingSphere.fromPoints(lotesPositions);
       centerPosition = boundingSphere.center;
     } else {
-      // Usar coordenadas de fallback
-      centerPosition = window.Cesium.Cartesian3.fromDegrees(-71.8970, -17.0998, 0);
+      centerPosition = window.Cesium.Cartesian3.fromDegrees(-71.8925, -17.1165, 0);
     }
 
     // Convertir a Cartographic para obtener latitud

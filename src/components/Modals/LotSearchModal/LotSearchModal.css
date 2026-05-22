@@ -320,27 +320,31 @@
 }
 
 .lot-card-status.disponible {
-  color: #F0E68C;
-  background: rgba(240, 230, 140, 0.1);
-  border: 1px solid rgba(240, 230, 140, 0.2);
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.25);
 }
 
 .lot-card-status.reservado {
-  color: #F08080;
-  background: rgba(240, 128, 128, 0.1);
-  border: 1px solid rgba(240, 128, 128, 0.2);
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.25);
 }
 
 .lot-card-status.vendido {
-  color: #87CEFA;
-  background: rgba(135, 206, 250, 0.1);
-  border: 1px solid rgba(135, 206, 250, 0.2);
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.25);
 }
 
 .lot-card-status.negociacion {
-  color: #FFB347;
-  background: rgba(255, 179, 71, 0.1);
-  border: 1px solid rgba(255, 179, 71, 0.2);
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.25);
 }
 
 .lot-card-details {

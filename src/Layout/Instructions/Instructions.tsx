@@ -40,7 +40,7 @@ const Instructions = ({ onClose }: InstructionsProps) => {
           <div className="instructions-glass-panel w-full max-w-4xl p-container-padding rounded-xl flex flex-col items-center text-center bg-surface-container">
             <header className="mb-12">
               <h1 className="font-h1 text-h1 text-on-surface mb-2 tracking-tight">¿Cómo navegar?</h1>
-              <p className="font-body-lg text-on-surface-variant max-w-lg">Domina la experiencia 3D de Lomas de Jesús con estos controles sencillos e intuitivos.</p>
+              <p className="font-body-lg text-on-surface-variant max-w-lg">Domina la experiencia 3D de Nautia Condominios con estos controles sencillos e intuitivos.</p>
             </header>
             {/* Cards Container */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-element-gap w-full mb-12">
@@ -87,7 +87,7 @@ const Instructions = ({ onClose }: InstructionsProps) => {
           <div className="instructions-glass-panel instructions-inner-glow instructions-mobile-panel rounded-xl w-full shadow-2xl bg-surface-container/90">
             <div className="instructions-mobile-header">
               <h1 className="font-h1 text-h1 text-primary">¿Cómo navegar?</h1>
-              <p className="font-body-md text-on-surface-variant">Explora cada rincón de Lomas de Jesús con total fluidez.</p>
+              <p className="font-body-md text-on-surface-variant">Explora cada rincón de Nautia Condominios con total fluidez.</p>
             </div>
             <div className="instructions-mobile-gestures">
               <div className="instructions-mobile-gesture-card bg-surface-container-low/40 rounded-lg p-4 flex flex-col items-center text-center space-y-3 border border-outline-variant/20 hover:border-primary/50 transition-colors">

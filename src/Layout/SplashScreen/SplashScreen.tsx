@@ -46,7 +46,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
       {/* HORIZONTAL DESIGN (Desktop/Landscape) */}
       <div className="splash-content-wrapper horizontal-only">
         <div className="branding">
-          <h1 className="splash-title">Lomas de Jesús</h1>
+          <h1 className="splash-title">Nautia Condominios</h1>
           <p className="splash-subtitle">Luxury Retreat</p>
         </div>
 
@@ -66,7 +66,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
       <div className="splash-main-vertical vertical-only">
         <div className="top-content">
           <span className="material-symbols-outlined top-icon" style={{ fontVariationSettings: '"FILL" 1' }}>domain</span>
-          <h1 className="splash-title-v">LOMAS DE JESÚS</h1>
+          <h1 className="splash-title-v">NAUTIA CONDOMINOS</h1>
           <p className="splash-subtitle-v">LUXURY RETREAT</p>
         </div>
 

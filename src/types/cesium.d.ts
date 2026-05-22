@@ -48,6 +48,7 @@ declare global {
       end: number[],
       tipo?: string
     ) => Promise<any>;
+    getProjectMainMarkerLonLat: () => [number, number];
     updateEntornoButtonsState: (activeType: string) => void;
     resetEntornoToInitialState: () => void;
     closeVideoOverlay: () => void;

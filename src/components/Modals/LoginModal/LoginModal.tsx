@@ -115,7 +115,7 @@ const LoginModal = ({ isVisible, onClose }: LoginModalProps) => {
           </div>
           {!showForgot ? (
             <>
-              <h1 className="login-title">Bienvenido a Lomas de Jesús</h1>
+              <h1 className="login-title">Bienvenido a Nautia Condominios</h1>
               <p className="login-subtitle">El visor inmersivo que conecta tus proyectos con la realidad</p>
             </>
           ) : (

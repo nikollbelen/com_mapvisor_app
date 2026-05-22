@@ -9,14 +9,14 @@ export type DemoUserRecord = AppUser & { password: string };
 export const DEMO_USERS: DemoUserRecord[] = [
   {
     id: "admin-1",
-    email: "admin@lomas.com",
+    email: "admin@nautia.com",
     password: "admin123",
     full_name: "Administrador",
     role: "admin",
   },
   {
     id: "vendedor-1",
-    email: "vendedor@lomas.com",
+    email: "vendedor@nautia.com",
     password: "vendedor123",
     full_name: "Vendedor Demo",
     role: "vendedor",

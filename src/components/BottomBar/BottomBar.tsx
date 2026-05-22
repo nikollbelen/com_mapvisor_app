@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { LOT_STATUS_LEGEND_ITEMS, LOT_STATUS_COLORS } from '../../constants/lotStatusColors';
 import './BottomBar.css';
 
 interface BottomBarProps {
@@ -62,8 +63,8 @@ const BottomBar = ({
             </div>
             <div className="h-6 w-px bg-outline-variant"></div>
             <div className="flex items-center gap-unit text-on-surface-variant">
-              <span className="text-[10px] font-label-caps uppercase tracking-widest">Total Parcelas</span>
-              <span className="text-on-surface font-bold text-sm">11</span>
+              <span className="text-[10px] font-label-caps uppercase tracking-widest">Total Lotes</span>
+              <span className="text-on-surface font-bold text-sm">7</span>
             </div>
           </div>
         </footer>
@@ -96,22 +97,21 @@ const BottomBar = ({
             {showLegend && (
               <div className="px-6 mb-4 pointer-events-auto">
                 <div className="hud-glass-panel hud-gold-edge p-4 rounded-2xl shadow-2xl space-y-3 max-w-[240px] mx-auto">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                    <span className="font-label-caps text-label-caps text-on-surface">Disponible</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
-                    <span className="font-label-caps text-label-caps text-on-surface">Reservado</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.6)]"></div>
-                    <span className="font-label-caps text-label-caps text-on-surface">Vendido</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
-                    <span className="font-label-caps text-label-caps text-on-surface">En negociación</span>
-                  </div>
+                  {LOT_STATUS_LEGEND_ITEMS.map(({ key, label }) => {
+                    const { hex, glowRgba } = LOT_STATUS_COLORS[key];
+                    return (
+                      <div key={key} className="flex items-center gap-3">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{
+                            backgroundColor: hex,
+                            boxShadow: `0 0 8px ${glowRgba}`,
+                          }}
+                        />
+                        <span className="font-label-caps text-label-caps text-on-surface">{label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
