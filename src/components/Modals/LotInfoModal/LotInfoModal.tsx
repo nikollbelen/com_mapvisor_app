@@ -383,7 +383,7 @@ const LotInfoModal = ({
 
   const formatLotLabel = (direccion?: string, phase?: string) => {
     const normalizedPhase = (phase || '').toString().replace(/^\s*etapa\s+/i, '').trim();
-    const stageText = normalizedPhase ? `Etapa ${normalizedPhase}` : '';
+    const stageText = normalizedPhase ? `${normalizedPhase}` : '';
   
     if (!direccion) {
       return stageText ? `${stageText} - Lote sin identificar` : 'Lote sin identificar';
@@ -2797,7 +2797,7 @@ const LotInfoModal = ({
               <div className="lot-box">
                 <span id="modalLot">{getLotWithoutPhase(lotData.lot)}</span>
               </div>
-              <div className="lot-stage-badge">Etapa {lotData.phase || "1"}</div>
+              <div className="lot-stage-badge">{lotData.phase || "1"}</div>
               <div
                 className="lot-status-badge"
                 style={{
@@ -2913,7 +2913,7 @@ const LotInfoModal = ({
               <div>
                 <h2 className="quotation-title">Cotizador</h2>
                 <p className="quotation-subtitle">
-                  {getLotWithoutPhase(lotData.lot)} · Etapa {lotData.phase || "1"}
+                  {getLotWithoutPhase(lotData.lot)} · {lotData.phase || "1"}
                 </p>
               </div>
             </div>
