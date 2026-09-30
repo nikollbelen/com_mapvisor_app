@@ -12,11 +12,11 @@
             "type": "Feature",
             "properties": {
                 "fid": 2001,
-                "number": "Lote 1",
+                "number": "1",
                 "direccion": "Lote 1",
                 "estado": "disponible",
                 "lote": "1",
-                "manzana": "Lote",
+                "manzana": "A",
                 "area": "150",
                 "precio": "45000"
             },
@@ -54,11 +54,11 @@
             "type": "Feature",
             "properties": {
                 "fid": 2002,
-                "number": "Lote 2",
+                "number": "2",
                 "direccion": "Lote 2",
                 "estado": "disponible",
                 "lote": "2",
-                "manzana": "Lote",
+                "manzana": "A",
                 "area": "150",
                 "precio": "45000"
             },
@@ -166,11 +166,11 @@
             "type": "Feature",
             "properties": {
                 "fid": 2005,
-                "number": "Lote 4",
+                "number": "4",
                 "direccion": "Lote 4",
                 "estado": "reservado",
                 "lote": "4",
-                "manzana": "Lote",
+                "manzana": "B",
                 "area": "150",
                 "precio": "45000"
             },
@@ -212,11 +212,11 @@
             "type": "Feature",
             "properties": {
                 "fid": 2006,
-                "number": "Lote 5",
+                "number": "5",
                 "direccion": "Lote 5",
                 "estado": "vendido",
                 "lote": "5",
-                "manzana": "Lote",
+                "manzana": "B",
                 "area": "150",
                 "precio": "45000"
             },
@@ -258,11 +258,11 @@
             "type": "Feature",
             "properties": {
                 "fid": 2007,
-                "number": "Lote 6",
+                "number": "6",
                 "direccion": "Lote 6",
                 "estado": "disponible",
                 "lote": "6",
-                "manzana": "Lote",
+                "manzana": "B",
                 "area": "150",
                 "precio": "45000"
             },

@@ -239,43 +239,11 @@ const Sidebar = () => {
                   <span className="font-label-caps text-[9px] uppercase">Vista</span>
                 </button>
               )}
-              <div className="w-px h-8 bg-outline-variant mx-2"></div>
-              <button className={navBtnClass('usuario')} onClick={() => handleItemClick('usuario')}>
-                <span className="material-symbols-outlined mb-1">account_circle</span>
-                <span className="font-label-caps text-[9px] uppercase">Usuario</span>
-              </button>
+              {/* Separador y botón Usuario ocultos intencionalmente */}
             </nav>
           </header>
 
-          {/* Camera Controls Sidebar (Left Centered) */}
-          <aside className="fixed left-floating-offset top-1/2 -translate-y-1/2 z-50 flex flex-col gap-unit">
-            <div className="hud-glass-panel hud-glass-glow-top rounded-2xl p-2 flex flex-col gap-unit items-center">
-              <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Reset View" onClick={() => handleCamera('home')}>
-                <span className="material-symbols-outlined text-xl">home</span>
-              </button>
-              <div className="w-8 h-px bg-outline-variant/30 my-1"></div>
-              <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Up" onClick={() => handleCamera('up')}>
-                <span className="material-symbols-outlined text-xl">keyboard_arrow_up</span>
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Down" onClick={() => handleCamera('down')}>
-                <span className="material-symbols-outlined text-xl">keyboard_arrow_down</span>
-              </button>
-              <div className="w-8 h-px bg-outline-variant/30 my-1"></div>
-              <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Zoom In" onClick={() => handleCamera('zoomIn')}>
-                <span className="material-symbols-outlined text-xl">add</span>
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Zoom Out" onClick={() => handleCamera('zoomOut')}>
-                <span className="material-symbols-outlined text-xl">remove</span>
-              </button>
-              <div className="w-8 h-px bg-outline-variant/30 my-1"></div>
-              <button className="w-10 h-10 flex items-center justify-center bg-primary-container text-on-primary rounded-lg transition-all shadow-[0_0_15px_rgba(197,160,89,0.4)]" title="3D View" onClick={() => handleCamera('view3d')}>
-                <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: '"FILL" 1' }}>3d_rotation</span>
-              </button>
-              <button id="grid" className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary-container hover:bg-surface-container-high rounded-lg transition-all" title="Grid" onClick={() => handleCamera('grid')}>
-                <span className="material-symbols-outlined text-xl">grid_on</span>
-              </button>
-            </div>
-          </aside>
+
         </>
       )}
 

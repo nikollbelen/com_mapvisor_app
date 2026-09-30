@@ -20,7 +20,7 @@ export function useWebSocket() {
     const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL;
     
     if (!socketBaseUrl) {
-      console.warn('[WebSocket] VITE_SOCKET_BASE_URL no está definida. WebSocket no se conectará.');
+      // WebSocket deshabilitado: VITE_SOCKET_BASE_URL no configurada
       return;
     }
 

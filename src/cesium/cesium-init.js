@@ -58,17 +58,13 @@ let selectedOriginalMaterial = null;
 let lotGridActive = true;
 
 function isLotGridActive() {
-  const btnGrid = document.getElementById("grid");
-  if (btnGrid) return btnGrid.classList.contains("active");
+  // Usar siempre la variable JS, no el DOM (el botón React usa clases distintas a "active")
   return lotGridActive;
 }
 
 function setLotGridActive(active) {
   lotGridActive = !!active;
-  const btnGrid = document.getElementById("grid");
-  if (!btnGrid) return;
-  if (lotGridActive) btnGrid.classList.add("active");
-  else btnGrid.classList.remove("active");
+  // El estado visual del botón lo maneja React; no manipular clases del DOM aquí.
 }
 
 /** Resalte de parcela seleccionada: siempre color de estado (no blanco transparente). */
@@ -434,7 +430,7 @@ try {
     await window.Cesium.IonImageryProvider.fromAssetId(4822551)
   );
 } catch (error) {
-  console.error("❌ Error loading map image:", error);
+  // console.error("❌ Error loading map image:", error);
 }
 
 async function loadLotesData() {
@@ -445,36 +441,47 @@ async function loadLotesData() {
     }
     lotesData = await resp.json();
 
-    // 1) Obtener propiedades desde API por POST y mapear por fid (manteniendo geometrías locales)
-    fidToApiProps.clear(); // Limpiar el Map antes de cargar nuevos datos
+    // 1) Obtener propiedades desde Google Apps Script y mapear por fid
+    fidToApiProps.clear();
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-      const projectId = import.meta.env.VITE_PROJECT_ID;
-      const apiUrl = `${apiBaseUrl}/lots/project/${projectId}?limit=1500`;
+      const scriptUrl = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL;
+      console.log("%c🔗 [SHEETS] Consultando Apps Script URL:", "color: cyan; font-weight: bold", scriptUrl);
 
-      const apiResp = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          'Accept': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
+      const scriptResp = await fetch(scriptUrl, { cache: "no-store" });
+      console.log("%c📡 [SHEETS] Respuesta HTTP status:", "color: cyan", scriptResp.status, scriptResp.ok ? "OK" : "ERROR");
+
+      if (scriptResp.ok) {
+        const lots = await scriptResp.json() || [];
+        console.log("%c📊 [SHEETS] Filas recibidas:", "color: lime; font-weight: bold", lots.length);
+        if (lots.length > 0) {
+           console.log("%c👉 [SHEETS] Muestra fila 0:", "color: lime", lots[0]);
+        } else {
+           console.warn("⚠️ [SHEETS] Se recibió 0 filas. ¿El Sheet está vacío o la URL es incorrecta?");
         }
-      });
-
-      if (apiResp.ok) {
-        const apiJson = await apiResp.json();
-        const lots = (apiJson && apiJson.data && Array.isArray(apiJson.data.lots)) ? apiJson.data.lots : [];
         lots.forEach((lot) => {
-          const fidKey = String(lot.fid);
-          fidToApiProps.set(fidKey, lot);
+          const fidKey = String(lot['FID'] || lot['fid'] || '');
+          if (fidKey) {
+            fidToApiProps.set(fidKey, {
+              fid: fidKey,
+              number: lot['Número'] || lot['Numero'] || '',
+              direccion: lot['Dirección'] || lot['Direccion'] || '',
+              block: lot['Manzana'] || '',
+              lot: lot['Lote'] || '',
+              area: lot['Área (m²)'] || lot['Area (m²)'] || lot['Area'] || '',
+              price: lot['Precio'] ? String(lot['Precio']).replace(/[$,]/g, '').trim() : '',
+              state: lot['Estado'] || 'disponible',
+            });
+          }
         });
+        console.log("%c✅ [SHEETS] fidToApiProps cargado con", "color: lime", fidToApiProps.size, "lotes.");
       } else {
-        console.error("Error al obtener lots desde API:", apiResp.status);
+        console.error("🔴 [SHEETS] Error HTTP al obtener datos del Apps Script:", scriptResp.status);
       }
-    } catch (apiErr) {
-      console.error("Fallo al llamar al endpoint de lots:", apiErr);
+    } catch (err) {
+      console.error("🔴 [SHEETS] Excepción al llamar Apps Script:", err);
     }
 
-    // 2) Fusionar propiedades del API dentro de cada feature por fid, manteniendo geometry local
+    // 2) Fusionar propiedades del Google Sheet dentro de cada feature por fid, manteniendo geometry local
     if (lotesData && Array.isArray(lotesData.features)) {
       lotesData.features.forEach((feature) => {
         if (!feature || !feature.properties) return;
@@ -483,15 +490,17 @@ async function loadLotesData() {
         const api = fidToApiProps.get(String(localFid));
         if (!api) return;
 
-        // Mapear campos del API -> esquema usado en la app
-        // API: { phase, block, lot, area, price, state, fid }
-        // Local: { manzana, lote, area, precio, estado }
+        // Mapear campos del CSV -> esquema usado en la app
+        // CSV parseado: { block, lot, area, price, state, fid, number, direccion }
+        // Local: { manzana, lote, area, precio, estado, number, direccion }
         const mapped = {
           manzana: api.block ?? feature.properties.manzana,
           lote: api.lot ?? feature.properties.lote,
           area: api.area ?? feature.properties.area,
           precio: api.price ?? feature.properties.precio,
           estado: api.state ? String(api.state).toLowerCase() : feature.properties.estado,
+          number: api.number ?? feature.properties.number,
+          direccion: api.direccion ?? feature.properties.direccion,
         };
 
         // Escribir propiedades fusionadas sin tocar geometry
@@ -500,15 +509,8 @@ async function loadLotesData() {
         feature.properties.area = mapped.area;
         feature.properties.precio = mapped.precio;
         feature.properties.estado = mapped.estado;
-
-        // Opcional: conservar extras del API para usos futuros
-        feature.properties._api = {
-          id: api.id,
-          phase: api.phase,
-          project_id: api.project_id,
-          updated_at: api.updated_at,
-          is_active: api.is_active,
-        };
+        if (mapped.number) feature.properties.number = mapped.number;
+        if (mapped.direccion) feature.properties.direccion = mapped.direccion;
       });
     }
 
@@ -812,8 +814,8 @@ async function loadLotesData() {
     flyToLotesView();
 
     // Disparar evento cuando Cesium esté completamente cargado
-    console.log('🚀 Cesium completamente cargado, disparando evento cesiumReady');
-    console.log('📊 Total de entidades en datasource:', lotesDataSource.entities.values.length);
+    // console.log('🚀 Cesium completamente cargado, disparando evento cesiumReady');
+    // console.log('📊 Total de entidades en datasource:', lotesDataSource.entities.values.length);
     window.dispatchEvent(new CustomEvent('cesiumReady', {
       detail: {
         viewer: viewer,
@@ -821,9 +823,9 @@ async function loadLotesData() {
         entityCount: lotesDataSource.entities.values.length
       }
     }));
-    console.log('✅ Evento cesiumReady disparado');
+    // console.log('✅ Evento cesiumReady disparado');
   } catch (error) {
-    console.error("Error loading lotesv2.geojson:", error);
+    // console.error("Error loading lotesv2.geojson:", error);
   }
 }
 
@@ -839,7 +841,7 @@ function updateLotFromWebSocket(lotData) {
 
     // 1) Actualizar el Map fidToApiProps
     fidToApiProps.set(fidKey, lotData);
-    console.log(`[WebSocket] Lote actualizado en fidToApiProps: fid=${fidKey}`, lotData);
+    // console.log(`[WebSocket] Lote actualizado en fidToApiProps: fid=${fidKey}`, lotData);
 
     // Variable para almacenar los datos mapeados (se usará en múltiples lugares)
     let mapped = null;
@@ -877,7 +879,7 @@ function updateLotFromWebSocket(lotData) {
           is_active: lotData.is_active,
         };
 
-        console.log(`[WebSocket] Feature actualizado en lotesData: fid=${fidKey}`);
+        // console.log(`[WebSocket] Feature actualizado en lotesData: fid=${fidKey}`);
       } else {
         console.warn(`[WebSocket] No se encontró feature con fid=${fidKey} en lotesData`);
         // Si no encontramos el feature, crear mapped con los datos del API directamente
@@ -929,7 +931,7 @@ function updateLotFromWebSocket(lotData) {
           entity.polyline.material = isLotGridActive() ? createGlowMaterial(getStatusGlowColor(mapped.estado), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
         }
 
-        console.log(`[WebSocket] Entidad Cesium actualizada: fid=${fidKey}`);
+        // console.log(`[WebSocket] Entidad Cesium actualizada: fid=${fidKey}`);
 
         // 6) Si esta entidad es la que está actualmente seleccionada, disparar evento para actualizar el modal
         if (selected && selected === entity && window.getDireccion && window.getArea && window.getPrecio && window.getEstado && window.getColindancias && window.getId && window.getPhase) {
@@ -948,7 +950,7 @@ function updateLotFromWebSocket(lotData) {
               },
             })
           );
-          console.log(`[WebSocket] Evento loteUpdated disparado para lote seleccionado: fid=${fidKey}`);
+          // console.log(`[WebSocket] Evento loteUpdated disparado para lote seleccionado: fid=${fidKey}`);
         }
       }
     }
@@ -1011,13 +1013,13 @@ function updateLotFromWebSocket(lotData) {
           };
         });
 
-      console.log(`[WebSocket] processedLots re-procesado, total: ${processedLots.length}`);
+      // console.log(`[WebSocket] processedLots re-procesado, total: ${processedLots.length}`);
     }
 
     // 5) Actualizar la visualización si loadLotData está disponible
     if (window.loadLotData) {
       window.loadLotData();
-      console.log(`[WebSocket] Visualización actualizada para lote fid=${fidKey}`);
+      // console.log(`[WebSocket] Visualización actualizada para lote fid=${fidKey}`);
     }
   } catch (error) {
     console.error('[WebSocket] Error al actualizar lote:', error, lotData);
@@ -1036,7 +1038,9 @@ function setupLoteInteractions() {
   // Grid colorido activo por defecto (coincide con materiales al cargar lotes)
   setTimeout(() => {
     setLotGridActive(true);
-    console.log("🎯 [setupLoteInteractions] Grid mode active by default (colorful lots).");
+    // console.log("🎯 [setupLoteInteractions] Grid mode active by default (colorful lots).");
+    // Notificar a React para que sincronice su estado visual
+    window.dispatchEvent(new CustomEvent('gridStateChanged', { detail: { active: true } }));
   }, 100);
 
   // Helper functions
@@ -1186,9 +1190,9 @@ function setupLoteInteractions() {
 
     // Restore hover if we moved away or to another entity
     if (highlighted && highlighted !== entity) {
-      console.log("🔍 [Hover Exit] Entity ID:", highlighted.id);
-      console.log("   - Base material to restore:", highlighted._baseMaterial);
-      console.log("   - Is highlighted selected?", highlighted === selected);
+      // console.log("🔍 [Hover Exit] Entity ID:", highlighted.id);
+      // console.log("   - Base material to restore:", highlighted._baseMaterial);
+      // console.log("   - Is highlighted selected?", highlighted === selected);
       
       viewer.scene.canvas.style.cursor = "default";
       // Don't touch if it's the selected one
@@ -1231,15 +1235,15 @@ function setupLoteInteractions() {
             // Efecto Hover: Resplandor más fuerte
             const gridActive = isLotGridActive();
             
-            console.log("🔍 [Hover Enter] Entity ID:", entity.id);
-            console.log("   - Estado:", estadoValue);
-            console.log("   - Grid Active:", gridActive);
-            console.log("   - Current Polygon Material BEFORE hover:", entity.polygon.material);
-            console.log("   - Entity Base Material (_baseMaterial):", entity._baseMaterial);
+            // console.log("🔍 [Hover Enter] Entity ID:", entity.id);
+            // console.log("   - Estado:", estadoValue);
+            // console.log("   - Grid Active:", gridActive);
+            // console.log("   - Current Polygon Material BEFORE hover:", entity.polygon.material);
+            // console.log("   - Entity Base Material (_baseMaterial):", entity._baseMaterial);
 
             if (gridActive) {
               const newColor = getStatusColor(estadoValue).withAlpha(0.7);
-              console.log("   - Setting polygon material to status color (alpha 0.7):", newColor);
+              // console.log("   - Setting polygon material to status color (alpha 0.7):", newColor);
               entity.polygon.material = newColor; // Hover brillando
               if (entity.polyline) {
                 entity.polyline.width = 2; // Borde mucho más delgado en hover
@@ -1247,11 +1251,11 @@ function setupLoteInteractions() {
               }
             } else {
               const newColor = modeSelected.withAlpha(0.2);
-              console.log("   - Setting polygon material to modeSelected (alpha 0.2):", newColor);
+              // console.log("   - Setting polygon material to modeSelected (alpha 0.2):", newColor);
               entity.polygon.material = newColor; // Hover oscuro
             }
             
-            console.log("   - Current Polygon Material AFTER hover:", entity.polygon.material);
+            // console.log("   - Current Polygon Material AFTER hover:", entity.polygon.material);
           }
           viewer.scene.requestRender();
         }
@@ -1305,6 +1309,105 @@ function setupLoteInteractions() {
 
 loadLotesData();
 
+// Polling de Google Sheets para actualizaciones en tiempo real (cada 10 segundos)
+async function pollGoogleSheet() {
+  if (!lotesDataSource || !lotesDataSource.entities) return;
+
+  try {
+    const scriptUrl = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL;
+    const scriptResp = await fetch(scriptUrl, { cache: "no-store" });
+    if (!scriptResp.ok) return;
+
+    const lots = await scriptResp.json() || [];
+    console.log("%c🔄 [SHEETS POLL] Recibidas:", "color: cyan", lots.length, "filas -", new Date().toLocaleTimeString());
+
+    const sheetDataByFid = {};
+    lots.forEach((lot) => {
+      const fidKey = String(lot['FID'] || lot['fid'] || '');
+      if (fidKey) {
+        sheetDataByFid[fidKey] = {
+          price: lot['Precio'] ? String(lot['Precio']).replace(/[$,]/g, '').trim() : '',
+          state: (lot['Estado'] || 'disponible').toLowerCase(),
+        };
+      }
+    });
+
+    const entities = lotesDataSource.entities.values;
+    let anyChanged = false;
+
+    entities.forEach(entity => {
+      const entityFid = entity.properties.fid ? entity.properties.fid.getValue() : null;
+      if (!entityFid) return;
+      
+      const sheetData = sheetDataByFid[String(entityFid)];
+      if (!sheetData) return;
+
+      const currentState = entity.properties.status ? (typeof entity.properties.status.getValue === 'function' ? entity.properties.status.getValue() : entity.properties.status) : null;
+      const currentPrice = entity.properties.price ? (typeof entity.properties.price.getValue === 'function' ? entity.properties.price.getValue() : entity.properties.price) : null;
+
+      let changed = false;
+      if (currentState !== sheetData.state) {
+        if (entity.properties.status && typeof entity.properties.status.setValue === 'function') {
+           entity.properties.status.setValue(sheetData.state);
+        } else {
+           entity.properties.status = sheetData.state;
+        }
+        changed = true;
+        anyChanged = true;
+      }
+      if (String(currentPrice) !== String(sheetData.price)) {
+        if (entity.properties.price && typeof entity.properties.price.setValue === 'function') {
+           entity.properties.price.setValue(sheetData.price);
+        } else {
+           entity.properties.price = sheetData.price;
+        }
+        changed = true;
+        anyChanged = true;
+      }
+
+      if (changed && entity.polygon) {
+        const estadoValue = sheetData.state;
+        
+        // Use logic from initialization to re-color
+        const newBaseMaterial = getStatusColor(estadoValue).withAlpha(0.4);
+        entity._baseMaterial = newBaseMaterial;
+        
+        if (entity !== selected) {
+          entity.polygon.material = newBaseMaterial;
+          if (entity.polyline && typeof isLotGridActive === "function") {
+             entity.polyline.material = isLotGridActive() ? createGlowMaterial(getStatusGlowColor(estadoValue), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
+          }
+        }
+      }
+    });
+
+    // Sincronizar array local para los filtros y React UI
+    if (typeof processedLots !== 'undefined') {
+      processedLots.forEach(plot => {
+         const fidKey = String(plot.fid);
+         const sheetData = sheetDataByFid[fidKey];
+         if (sheetData) {
+             plot.status = sheetData.state;
+             plot.price = parseFloat(sheetData.price) || 0;
+         }
+      });
+    }
+
+    // Trigger update for currently selected lot detail in UI if open
+    if (anyChanged && selected) {
+        const detail = buildLoteSelectedDetail(selected);
+        window.dispatchEvent(new CustomEvent("loteSelected", { detail }));
+    }
+
+  } catch (err) {
+    // console.error("Error polling Google Sheet", err);
+  }
+}
+
+// Iniciar el polling cada 1 segundo
+setInterval(pollGoogleSheet, 1000);
+
+
 function extractLotesPositions(lotesData) {
   const positions = [];
 
@@ -1350,11 +1453,11 @@ function extractLotesPositions(lotesData) {
 
 // Global functions
 
-function flyToLotesView() {
+function flyToLotesView(onComplete) {
   if (!viewer) return;
 
   if (lotesPositions.length > 0) {
-    flyToView(lotesPositions);
+    flyToView(lotesPositions, { forMarkers: false, onComplete });
     return;
   }
 
@@ -1367,6 +1470,7 @@ function flyToLotesView() {
       roll: 0.0,
     },
     duration: 2.5,
+    complete: onComplete || undefined,
   });
 }
 
@@ -1374,7 +1478,7 @@ const LOTES_VIEW_RANGE_MULTIPLIER = 3.8;
 const MARKERS_VIEW_RANGE_MULTIPLIER = 7.5;
 const MARKERS_VIEW_MIN_RANGE = 750;
 
-function flyToView(positions, { forMarkers = false } = {}) {
+function flyToView(positions, { forMarkers = false, onComplete } = {}) {
   if (!viewer || !positions || positions.length === 0) return;
 
   const boundingSphere = window.Cesium.BoundingSphere.fromPoints(positions);
@@ -1391,6 +1495,7 @@ function flyToView(positions, { forMarkers = false } = {}) {
       window.Cesium.Math.toRadians(-90),
       range
     ),
+    complete: onComplete || undefined,
   });
 }
 
@@ -1663,8 +1768,6 @@ function reiniciarMenu() {
 async function handleFotos() {
   clearViewerModeState();
   setMapViewerMode("fotos");
-  // Ocultar etiquetas de lotes en este modo
-  window.showLoteLabels = false;
 
   try {
     const response = await fetch("./data/fotos.geojson");
@@ -1770,8 +1873,6 @@ function closeOverlay360() {
 async function handleAreasComunes() {
   clearViewerModeState();
   setMapViewerMode("areas");
-  // Ocultar etiquetas de lotes en este modo
-  window.showLoteLabels = false;
 
   let areasData = null;
 
@@ -1925,7 +2026,7 @@ function flyToAreaComun(fid) {
         duration: 1.5,
         offset: new window.Cesium.HeadingPitchRange(
           0,
-          window.Cesium.Math.toRadians(-50),
+          window.Cesium.Math.toRadians(-90),
           Math.max(boundingSphere.radius * 8, MARKERS_VIEW_MIN_RANGE)
         ),
       });
@@ -2030,8 +2131,8 @@ function applyFilters(lots) {
     // Area filter - area range
     if (lot.area < areaMin || lot.area > areaMax) return false;
 
-    // Status filter
-    if (selectedStatus.length > 0 && !selectedStatus.includes(lot.status))
+    // Status filter — if nothing selected, show nothing; otherwise must match
+    if (!selectedStatus.includes(lot.status))
       return false;
 
     return true;
@@ -2140,8 +2241,6 @@ function loadLotData() {
 async function handleEntorno() {
   clearViewerModeState();
   setMapViewerMode("entorno");
-  // Ocultar etiquetas de lotes en este modo
-  window.showLoteLabels = false;
 
   // Ensure button container is visible
   const aroundButtonsContainer = document.getElementById(
@@ -2661,9 +2760,9 @@ function zoomOut() {
   });
 }
 
-function goHome() {
+function goHome(onComplete) {
   try {
-    flyToLotesView();
+    flyToLotesView(onComplete);
   } catch (error) {
     console.error("Error al volar a la vista superior:", error);
   }
@@ -2713,12 +2812,19 @@ function updateLabelsOnResize() {
 window.addEventListener('resize', updateLabelsOnResize);
 
 function toggleGrid() {
-  if (!lotesDataSource) return;
-  const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);
-  
-  // If it currently has active class, it means we are turning it OFF
   const willBeActive = !isLotGridActive();
-  console.log("🔄 [toggleGrid] Toggling grid active class. Grid will be active:", willBeActive);
+  // console.log("🔄 [toggleGrid] Toggling grid. Grid will be active:", willBeActive);
+
+  // Actualizar el estado interno siempre (incluso si no hay datasource cargado aún)
+  setLotGridActive(willBeActive);
+
+  // Si no hay datasource, el estado queda guardado y se aplicará cuando se carguen los lotes
+  if (!lotesDataSource) {
+    // console.log("⚠️ [toggleGrid] lotesDataSource no disponible aún; estado guardado para cuando se cargue.");
+    return willBeActive;
+  }
+
+  const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);
 
   entitiesAll.forEach((e) => {
     const loteValue = e.properties.lote ? e.properties.lote.getValue() : "";
@@ -2755,9 +2861,8 @@ function toggleGrid() {
     }
   });
 
-  setLotGridActive(willBeActive);
-
   if (viewer) viewer.scene.requestRender();
+  return willBeActive;
 }
 
 window.moveCameraUp = moveCameraUp;

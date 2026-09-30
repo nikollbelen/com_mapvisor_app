@@ -18,6 +18,8 @@ const SORT_OPTIONS = [
   { value: 'number-desc', label: 'Número: de mayor a menor' },
 ];
 
+const ALL_STATUSES = ['vendido', 'reservado', 'negociacion', 'disponible'] as const;
+
 const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => {
   const [priceMin, setPriceMin] = useState(DEFAULT_PRICE_BOUNDS.min);
   const [priceMax, setPriceMax] = useState(DEFAULT_PRICE_BOUNDS.max);
@@ -27,7 +29,7 @@ const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => 
   const [areaBounds, setAreaBounds] = useState(DEFAULT_AREA_BOUNDS);
   const [sortBy, setSortBy] = useState('area-asc');
   const [sortOpen, setSortOpen] = useState(false);
-  const [status, setStatus] = useState('disponible');
+  const [statuses, setStatuses] = useState<Set<string>>(new Set(ALL_STATUSES));
   const [isMobile, setIsMobile] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
@@ -142,7 +144,7 @@ const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => 
   const handleClearFilters = () => {
     setPriceMin(priceBounds.min); setPriceMax(priceBounds.max);
     setAreaMin(areaBounds.min); setAreaMax(areaBounds.max);
-    setSortBy('area-asc'); setStatus('disponible');
+    setSortBy('area-asc'); setStatuses(new Set(ALL_STATUSES));
     if (window.loadLotData) window.loadLotData();
   };
 
@@ -167,8 +169,12 @@ const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => 
     if (window.loadLotData) window.loadLotData();
   };
 
-  const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus);
+  const handleStatusToggle = (s: string) => {
+    setStatuses(prev => {
+      const next = new Set(prev);
+      if (next.has(s)) { next.delete(s); } else { next.add(s); }
+      return next;
+    });
     setTimeout(() => { if (window.loadLotData) window.loadLotData(); }, 0);
   };
 
@@ -274,13 +280,14 @@ const LotSearchModal = ({ isVisible = false, onClose }: LotSearchModalProps) => 
           <label className="filter-label">Estado</label>
           <div className="status-buttons">
             {/* Keep both class names: status-pill for styling + status-btn + data-status for Cesium */}
-            {['vendido','reservado','negociacion','disponible'].map(s => (
+            {(['vendido','reservado','negociacion','disponible'] as const).map(s => (
               <button
                 key={s}
-                className={`status-pill status-btn ${s} ${status === s ? 'active' : ''}`}
+                className={`status-pill status-btn ${s} ${statuses.has(s) ? 'active' : ''}`}
                 data-status={s}
-                onClick={() => handleStatusChange(s)}
+                onClick={() => handleStatusToggle(s)}
               >
+                <span className="status-dot" />
                 {{ vendido:'Vendido', reservado:'Reservado', negociacion:'Negociación', disponible:'Disponible' }[s]}
               </button>
             ))}

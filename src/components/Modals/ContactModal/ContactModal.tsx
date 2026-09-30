@@ -286,21 +286,20 @@ const ContactModal = ({ isVisible, type, onClose, onSubmit, currentUser, quotati
     setErrors(newErrors);
   };
 
-  // Cargar vendedores desde la API de Apico
-  useEffect(() => {
-    fetch('https://api.apico.dev/v1/gE2H1N/1vL47XFQKS6ajoKccemle7MYYDStFVawgnopVpfzz-UA/values/sellers')
-      .then(res => res.json())
-      .then((apiData) => {
-        // Transformar los datos de la API al formato esperado
-        const sellersData: SellerData[] = apiData.values.map((row: any) => ({
-          id: row[0],
-          nombre: row[1],
-          email: row[2]
-        }));
-        setSellers(sellersData);
-      })
-      .catch(() => setSellers([]));
-  }, []);
+  // API de vendedores deshabilitada (CORS bloqueado en localhost)
+  // useEffect(() => {
+  //   fetch('https://api.apico.dev/v1/gE2H1N/1vL47XFQKS6ajoKccemle7MYYDStFVawgnopVpfzz-UA/values/sellers')
+  //     .then(res => res.json())
+  //     .then((apiData) => {
+  //       const sellersData: SellerData[] = apiData.values.map((row: any) => ({
+  //         id: row[0],
+  //         nombre: row[1],
+  //         email: row[2]
+  //       }));
+  //       setSellers(sellersData);
+  //     })
+  //     .catch(() => setSellers([]));
+  // }, []);
 
   // Actualizar datos de vendedor al cambiar el ID
   useEffect(() => {

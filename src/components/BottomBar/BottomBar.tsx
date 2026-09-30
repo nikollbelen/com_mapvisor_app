@@ -13,6 +13,10 @@ const BottomBar = ({
 }: BottomBarProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
+  // Grid empieza ACTIVO (cuadrícula visible al cargar el visor)
+  const [gridActive, setGridActive] = useState(true);
+  // 3D empieza INACTIVO (no enfocado hasta que el usuario lo presione)
+  const [view3dActive, setView3dActive] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -23,18 +27,81 @@ const BottomBar = ({
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Camera handlers for mobile bottom nav
-  const handleCamera = (action: string) => {
-    switch (action) {
-      case 'home': if (window.goHome) window.goHome(); break;
-      case 'up': if (window.moveCameraUp) window.moveCameraUp(); break;
-      case 'down': if (window.moveCameraDown) window.moveCameraDown(); break;
-      case 'zoomIn': if (window.zoomIn) window.zoomIn(); break;
-      case 'zoomOut': if (window.zoomOut) window.zoomOut(); break;
-      case 'view3d': if (window.view3D) window.view3D(); break;
-      case 'grid': if (window.toggleGrid) window.toggleGrid(); break;
+  // Sincronizar gridActive con Cesium cuando éste reinicia el estado (ej. setupLoteInteractions)
+  useEffect(() => {
+    const handleGridStateChanged = (e: CustomEvent) => {
+      setGridActive(e.detail.active);
+    };
+    window.addEventListener('gridStateChanged', handleGridStateChanged as EventListener);
+    return () => window.removeEventListener('gridStateChanged', handleGridStateChanged as EventListener);
+  }, []);
+
+  // -------------------------------------------------------
+  // Handlers de cámara
+  // -------------------------------------------------------
+  // moveOrReset(action):
+  //   - Si 3D está ACTIVO: va a home, desactiva 3D y luego
+  //     ejecuta el movimiento (espera la animación de flyTo).
+  //   - Si 3D NO está activo: ejecuta el movimiento directo.
+  // -------------------------------------------------------
+
+  const MOVE_DELAY_MS = 1600; // igual a la duración de flyToLotesView (1.5s) + buffer
+
+  const moveOrReset = (action: () => void) => {
+    if (view3dActive) {
+      // 3D está encendido: primero regresar a home, apagar 3D, luego mover
+      setView3dActive(false);
+      if (window.goHome) window.goHome();
+      setTimeout(action, MOVE_DELAY_MS);
+    } else {
+      // 3D apagado: ejecutar directamente sin espera
+      action();
     }
   };
+
+  const handleCamera = (action: string) => {
+    switch (action) {
+      case 'home':
+        setView3dActive(false);
+        if (window.goHome) window.goHome();
+        break;
+      case 'up':
+        moveOrReset(() => { if (window.moveCameraUp) window.moveCameraUp(); });
+        break;
+      case 'down':
+        moveOrReset(() => { if (window.moveCameraDown) window.moveCameraDown(); });
+        break;
+      case 'zoomIn':
+        moveOrReset(() => { if (window.zoomIn) window.zoomIn(); });
+        break;
+      case 'zoomOut':
+        moveOrReset(() => { if (window.zoomOut) window.zoomOut(); });
+        break;
+      case 'view3d': {
+        const turningOn = !view3dActive;
+        setView3dActive(turningOn);
+        if (turningOn) {
+          if (window.view3D) window.view3D();
+        } else {
+          if (window.goHome) window.goHome();
+        }
+        break;
+      }
+      case 'grid': {
+        // Usar el valor de retorno de toggleGrid() como fuente de verdad
+        // para evitar desincronización entre el estado JS y el estado React
+        if (window.toggleGrid) {
+          const newState = window.toggleGrid();
+          if (typeof newState === 'boolean') setGridActive(newState);
+          else setGridActive(prev => !prev); // fallback
+        } else {
+          setGridActive(prev => !prev);
+        }
+        break;
+      }
+    }
+  };
+
 
   return (
     <>
@@ -43,7 +110,93 @@ const BottomBar = ({
       {/* Exact copy from diseñoHorizontal/code.html    */}
       {/* ============================================= */}
       {!isMobile && (
-        <footer className="fixed bottom-floating-offset left-1/2 -translate-x-1/2 z-50">
+        <footer className="fixed bottom-floating-offset left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-3">
+          {/* Camera Controls Row — Desktop */}
+          <div className="hud-glass-panel hud-glass-glow-top px-4 py-2 rounded-full flex items-center gap-1">
+            {/* Home / Reset */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                className="cam-ctrl-btn"
+                onClick={() => handleCamera('home')}
+                aria-label="Vista inicial"
+              >
+                <span className="material-symbols-outlined text-[18px]">home</span>
+              </button>
+              <span className="cam-tooltip">Vista inicial</span>
+            </div>
+            <div className="h-5 w-px bg-outline-variant/40 mx-1" />
+            {/* Up */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                className="cam-ctrl-btn"
+                onClick={() => handleCamera('up')}
+                aria-label="Mover cámara arriba"
+              >
+                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_up</span>
+              </button>
+              <span className="cam-tooltip">Mover cámara arriba</span>
+            </div>
+            {/* Down */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                className="cam-ctrl-btn"
+                onClick={() => handleCamera('down')}
+                aria-label="Mover cámara abajo"
+              >
+                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+              </button>
+              <span className="cam-tooltip">Mover cámara abajo</span>
+            </div>
+            <div className="h-5 w-px bg-outline-variant/40 mx-1" />
+            {/* Zoom In */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                className="cam-ctrl-btn"
+                onClick={() => handleCamera('zoomIn')}
+                aria-label="Acercar"
+              >
+                <span className="material-symbols-outlined text-[18px]">zoom_in</span>
+              </button>
+              <span className="cam-tooltip">Acercar</span>
+            </div>
+            {/* Zoom Out */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                className="cam-ctrl-btn"
+                onClick={() => handleCamera('zoomOut')}
+                aria-label="Alejar"
+              >
+                <span className="material-symbols-outlined text-[18px]">zoom_out</span>
+              </button>
+              <span className="cam-tooltip">Alejar</span>
+            </div>
+            <div className="h-5 w-px bg-outline-variant/40 mx-1" />
+            {/* 3D View — inactivo al cargar; activa view3D() o regresa a home */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                className={`cam-ctrl-btn${view3dActive ? ' cam-ctrl-btn--accent' : ''}`}
+                onClick={() => handleCamera('view3d')}
+                aria-label="Vista 3D"
+              >
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: '"FILL" 1' }}>3d_rotation</span>
+              </button>
+              <span className="cam-tooltip">Vista 3D</span>
+            </div>
+            {/* Grid — activo al cargar, tooltip dinámico */}
+            <div className="cam-tooltip-wrapper">
+              <button
+                id="grid"
+                className={`cam-ctrl-btn${gridActive ? ' cam-ctrl-btn--accent' : ''}`}
+                onClick={() => handleCamera('grid')}
+                aria-label={gridActive ? 'Desactivar cuadrícula' : 'Activar cuadrícula'}
+              >
+                <span className="material-symbols-outlined text-[18px]">grid_on</span>
+              </button>
+              <span className="cam-tooltip">{gridActive ? 'Desactivar cuadrícula' : 'Activar cuadrícula'}</span>
+            </div>
+          </div>
+
+          {/* Legend Bar */}
           <div className="hud-glass-panel hud-glass-glow-top px-8 py-4 rounded-full flex items-center gap-8">
             <div className="flex items-center gap-unit group cursor-default">
               <span className="hud-status-dot bg-[#4ADE80] shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>

@@ -422,7 +422,7 @@
 }
 
 .status-pill {
-  padding: 10px 6px;
+  padding: 9px 8px;
   border-radius: 10px;
   font-family: 'Manrope', sans-serif;
   font-size: 11px;
@@ -430,23 +430,79 @@
   text-align: center;
   cursor: pointer;
   transition: all 0.25s ease;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #d1c5b4;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #9a8f80;
   letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.status-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #e2e2e2;
-  border-color: rgba(255, 255, 255, 0.22);
+/* --- Dot indicator --- */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+  opacity: 0.5;
 }
 
-.status-pill.active {
-  background: rgba(233, 193, 118, 0.15);
-  border-color: rgba(233, 193, 118, 0.5);
-  color: #e9c176;
+/* ---- Per-status inactive (outline color hint) ---- */
+.status-pill.disponible { border-color: rgba(34, 197, 94, 0.20); }
+.status-pill.disponible .status-dot { background: #22c55e; }
+.status-pill.disponible:hover { border-color: rgba(34, 197, 94, 0.45); color: #22c55e; background: rgba(34, 197, 94, 0.07); }
+.status-pill.disponible:hover .status-dot { opacity: 1; }
+
+.status-pill.reservado { border-color: rgba(249, 115, 22, 0.20); }
+.status-pill.reservado .status-dot { background: #f97316; }
+.status-pill.reservado:hover { border-color: rgba(249, 115, 22, 0.45); color: #f97316; background: rgba(249, 115, 22, 0.07); }
+.status-pill.reservado:hover .status-dot { opacity: 1; }
+
+.status-pill.vendido { border-color: rgba(220, 38, 38, 0.20); }
+.status-pill.vendido .status-dot { background: #ef4444; }
+.status-pill.vendido:hover { border-color: rgba(220, 38, 38, 0.45); color: #ef4444; background: rgba(220, 38, 38, 0.07); }
+.status-pill.vendido:hover .status-dot { opacity: 1; }
+
+.status-pill.negociacion { border-color: rgba(59, 130, 246, 0.20); }
+.status-pill.negociacion .status-dot { background: #3b82f6; }
+.status-pill.negociacion:hover { border-color: rgba(59, 130, 246, 0.45); color: #3b82f6; background: rgba(59, 130, 246, 0.07); }
+.status-pill.negociacion:hover .status-dot { opacity: 1; }
+
+/* ---- Active states (solid fill) ---- */
+.status-pill.disponible.active {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.55);
+  color: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.18);
 }
+.status-pill.disponible.active .status-dot { opacity: 1; box-shadow: 0 0 6px rgba(34, 197, 94, 0.8); }
+
+.status-pill.reservado.active {
+  background: rgba(249, 115, 22, 0.14);
+  border-color: rgba(249, 115, 22, 0.55);
+  color: #f97316;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.18);
+}
+.status-pill.reservado.active .status-dot { opacity: 1; box-shadow: 0 0 6px rgba(249, 115, 22, 0.8); }
+
+.status-pill.vendido.active {
+  background: rgba(220, 38, 38, 0.14);
+  border-color: rgba(220, 38, 38, 0.55);
+  color: #ef4444;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.18);
+}
+.status-pill.vendido.active .status-dot { opacity: 1; box-shadow: 0 0 6px rgba(239, 68, 68, 0.8); }
+
+.status-pill.negociacion.active {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.55);
+  color: #3b82f6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.18);
+}
+.status-pill.negociacion.active .status-dot { opacity: 1; box-shadow: 0 0 6px rgba(59, 130, 246, 0.8); }
 
 /* ---- Clear filters button ---- */
 .clear-filters-btn {

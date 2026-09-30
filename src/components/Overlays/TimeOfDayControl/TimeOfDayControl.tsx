@@ -57,22 +57,9 @@ const TimeOfDayControl = ({ isVisible = false }: TimeOfDayControlProps) => {
     { label: 'Noche', hour: 22 }
   ];
 
-  if (!isVisible) return null;
-
-  // Si no está expandido, mostrar solo el botón del sol
-  if (!isExpanded) {
-    return (
-      <button
-        className={`time-of-day-toggle-btn hud-glass-panel ${isMobile ? 'hud-gold-edge' : 'hud-glass-glow-top shadow-lg'}`}
-        onClick={() => setIsExpanded(true)}
-        aria-label="Mostrar control de hora del día"
-      >
-        <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-          {isMobile ? 'wb_sunny' : 'light_mode'}
-        </span>
-      </button>
-    );
-  }
+  // El botón toggle (sol) está oculto intencionalmente.
+  // El panel completo sigue disponible si isExpanded se activa externamente.
+  if (!isVisible || !isExpanded) return null;
 
   // Si está expandido, mostrar el panel completo
   return (

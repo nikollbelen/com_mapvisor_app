@@ -142,7 +142,7 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
                                 onClick={() => handleViewOnMap(fid)}
                               >
                                 <span className="material-symbols-outlined text-[18px]">near_me</span>
-                                <span>Ver mapa</span>
+                                <span>Ver en el mapa</span>
                               </button>
                             </div>
                           </div>
