@@ -65,9 +65,9 @@
 
 @media (max-width: 1024px) {
   .entorno-dock {
-    /* Móvil: vuelve al comportamiento original desde el fondo */
-    top: auto;
-    bottom: 100px;
+    /* Móvil: ahora se posiciona arriba, debajo del encabezado superior */
+    top: 84px;
+    bottom: auto;
     width: 90%;
     overflow-x: auto;
     justify-content: flex-start;

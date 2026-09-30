@@ -392,12 +392,15 @@
 @media (max-width: 1024px) {
   .lot-search-modal {
     top: auto;
-    bottom: max(16px, env(safe-area-inset-bottom, 0px));
-    right: 16px;
-    left: 16px;
-    width: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
     max-width: 100%;
-    max-height: min(75dvh, calc(100dvh - 100px));
+    height: 100%;
+    max-height: min(90dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+    border-radius: 24px 24px 0 0;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     overflow: hidden;
     display: flex;
     flex-direction: column;

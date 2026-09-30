@@ -254,12 +254,7 @@ const Sidebar = () => {
             </button>
           </header>
 
-          {/* Floating Time Control (from diseñoVertical/normal/code.html) */}
-          <div className="fixed top-24 right-6 z-50">
-            <button className="w-12 h-12 flex items-center justify-center rounded-full hud-glass-panel hud-gold-edge shadow-xl shadow-black/40 text-primary">
-              <span className="material-symbols-outlined">wb_sunny</span>
-            </button>
-          </div>
+          {/* Floating Time Control removed */}
         </>
       )}
 
@@ -322,30 +317,9 @@ const Sidebar = () => {
                   </div>
                 </button>
               )}
-              <button
-                type="button"
-                className="mobile-menu-item mobile-menu-item--user"
-                onClick={() => handleItemClick("usuario")}
-              >
-                <div className="mobile-menu-item-icon mobile-menu-item-icon--user">
-                  <span className="material-symbols-outlined">person</span>
-                </div>
-                <div className="mobile-menu-item-text">
-                  <span className="mobile-menu-item-title mobile-menu-item-title--gold">
-                    {user ? user.full_name : "Usuario"}
-                  </span>
-                  <span className="mobile-menu-item-subtitle">MI CUENTA</span>
-                </div>
-              </button>
             </div>
           </nav>
 
-          <footer className="mobile-menu-footer">
-            <button type="button" className="mobile-menu-brochure">
-              <span className="material-symbols-outlined">download</span>
-              Descargar Brochure
-            </button>
-          </footer>
         </div>
       )}
 

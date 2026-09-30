@@ -52,6 +52,9 @@ const AreasModal = ({ isVisible = false, onClose, areasData }: AreasModalProps) 
     if (window.flyToAreaComun) {
       window.flyToAreaComun(fid);
     }
+    if (isMobile) {
+      handleMinimize();
+    }
   };
 
   if (!isVisible) return null;

@@ -447,10 +447,27 @@ async function loadLotesData() {
       const scriptUrl = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL;
       console.log("%c🔗 [SHEETS] Consultando Apps Script URL:", "color: cyan; font-weight: bold", scriptUrl);
 
-      const scriptResp = await fetch(scriptUrl, { cache: "no-store" });
-      console.log("%c📡 [SHEETS] Respuesta HTTP status:", "color: cyan", scriptResp.status, scriptResp.ok ? "OK" : "ERROR");
+      let scriptResp = null;
+      let retries = 0;
+      const maxRetries = 4; // Intentar hasta 4 veces (1 inicial + 3 reintentos)
+      
+      while (retries < maxRetries) {
+        try {
+          scriptResp = await fetch(scriptUrl, { cache: "no-store" });
+          if (scriptResp.ok) break;
+          console.warn(`⚠️ [SHEETS] Intento ${retries + 1} falló con status: ${scriptResp.status}. Reintentando...`);
+        } catch (e) {
+          console.warn(`⚠️ [SHEETS] Intento ${retries + 1} falló con error:`, e, `. Reintentando...`);
+        }
+        retries++;
+        if (retries < maxRetries) {
+           await new Promise(resolve => setTimeout(resolve, 1500)); // esperar 1.5s antes de reintentar
+        }
+      }
 
-      if (scriptResp.ok) {
+      console.log("%c📡 [SHEETS] Respuesta final HTTP status:", "color: cyan", scriptResp ? scriptResp.status : "Fallo Total", scriptResp && scriptResp.ok ? "OK" : "ERROR");
+
+      if (scriptResp && scriptResp.ok) {
         const lots = await scriptResp.json() || [];
         console.log("%c📊 [SHEETS] Filas recibidas:", "color: lime; font-weight: bold", lots.length);
         if (lots.length > 0) {

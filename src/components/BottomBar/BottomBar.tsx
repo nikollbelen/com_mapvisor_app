@@ -358,7 +358,7 @@ const BottomBar = ({
             </button>
           )}
 
-          <div className="fixed bottom-32 right-0 left-0 z-10 flex flex-col items-center pointer-events-none">
+          <div className="fixed bottom-24 right-0 left-0 z-10 flex flex-col items-center pointer-events-none">
             {showLegend && (
               <div className="px-6 mb-4 pointer-events-auto">
                 <div className="hud-glass-panel hud-gold-edge p-4 rounded-2xl shadow-2xl space-y-2 max-w-[260px] mx-auto">

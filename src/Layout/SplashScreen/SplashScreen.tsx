@@ -9,19 +9,44 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
 
+  const [loadingMessage, setLoadingMessage] = useState("Inicializando Experiencia 3D...");
+
   useEffect(() => {
-    // Ocultar splash screen después de 3.5 segundos (2s originales + 1.5s extra)
-    const timer = setTimeout(() => {
+    // Rotar mensajes de UX cada 2 segundos
+    const messages = [
+      "Descargando datos del proyecto...",
+      "Preparando tu experiencia...",
+      "Lo estamos preparando todo para ti...",
+      "Construyendo entorno 3D..."
+    ];
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+      setLoadingMessage(messages[msgIndex]);
+      msgIndex = (msgIndex + 1) % messages.length;
+    }, 2000);
+
+    let isDone = false;
+    const finishLoading = () => {
+      if (isDone) return;
+      isDone = true;
       setIsFading(true);
-      
-      // Remover del DOM después de la animación
       setTimeout(() => {
         setIsVisible(false);
-        onComplete?.(); // Notificar que el splash screen terminó
+        onComplete?.();
       }, 800);
-    }, 3500);
+    };
 
-    return () => clearTimeout(timer);
+    // Escuchar cuando Cesium termina de cargar y procesar datos de Google Sheets
+    window.addEventListener('cesiumReady', finishLoading);
+    
+    // Fallback de seguridad por si algo falla y el evento nunca llega
+    const fallbackTimer = setTimeout(finishLoading, 10000);
+
+    return () => {
+      clearInterval(msgInterval);
+      window.removeEventListener('cesiumReady', finishLoading);
+      clearTimeout(fallbackTimer);
+    };
   }, [onComplete]);
 
   // No renderizar si no es visible
@@ -58,7 +83,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           <div className="progress-line">
             <div className="loading-bar-fill"></div>
           </div>
-          <span className="loading-text">Cargando Experiencia 3D</span>
+          <span className="loading-text">{loadingMessage}</span>
         </div>
       </div>
 
@@ -80,7 +105,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           <div className="progress-bar-v">
             <div className="progress-bar-fill-v"></div>
           </div>
-          <span className="loading-text-v">INICIALIZANDO EXPERIENCIA 3D...</span>
+          <span className="loading-text-v">{loadingMessage.toUpperCase()}</span>
         </div>
       </div>
 
