@@ -1511,8 +1511,15 @@ async function pollGoogleSheet() {
   }
 }
 
-// Iniciar el polling cada 1 segundo
-setInterval(pollGoogleSheet, 1000);
+// Función para iniciar el polling evitando condiciones de carrera (superposición de peticiones)
+async function startPolling() {
+  await pollGoogleSheet();
+  // Llamar nuevamente cada 2 segundos DESPUÉS de que termina la petición anterior
+  setTimeout(startPolling, 2000);
+}
+
+// Iniciar el polling
+setTimeout(startPolling, 2000);
 
 
 function extractLotesPositions(lotesData) {
