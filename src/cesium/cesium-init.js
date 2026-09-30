@@ -435,122 +435,40 @@ try {
 
 async function loadLotesData() {
   try {
+    // ══ FASE 1: Iniciar fetch Sheets EN PARALELO (arranca inmediatamente) ══════
+    const sheetsPromise = (async () => {
+      const scriptUrl = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL;
+      if (!scriptUrl) return null;
+      console.log("%c[SHEETS] Fetch iniciado en paralelo", "color: cyan; font-weight: bold");
+      let resp = null;
+      let tries = 0;
+      while (tries < 4) {
+        try {
+          resp = await fetch(scriptUrl, { cache: "no-store" });
+          if (resp.ok) break;
+          console.warn("[SHEETS] Intento " + (tries + 1) + " fallido (" + resp.status + "). Reintentando...");
+        } catch (e) {
+          console.warn("[SHEETS] Intento " + (tries + 1) + " fallido con error. Reintentando...");
+        }
+        tries++;
+        if (tries < 4) await new Promise(r => setTimeout(r, 1500));
+      }
+      if (!resp || !resp.ok) return null;
+      const lots = await resp.json() || [];
+      console.log("%c[SHEETS] Recibidas:", "color: lime", lots.length, "filas");
+      return lots;
+    })();
+
+    // ══ FASE 1: Cargar GeoJSON local (es local, rapidísimo) ══════════════════
     const resp = await fetch("./data/lotesv2.geojson");
     if (!resp.ok) {
       throw new Error(`No se pudo cargar lotesv2.geojson (${resp.status})`);
     }
     lotesData = await resp.json();
 
-    // 1) Obtener propiedades desde Google Apps Script y mapear por fid
-    fidToApiProps.clear();
-    try {
-      const scriptUrl = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL;
-      console.log("%c🔗 [SHEETS] Consultando Apps Script URL:", "color: cyan; font-weight: bold", scriptUrl);
-
-      let scriptResp = null;
-      let retries = 0;
-      const maxRetries = 4; // Intentar hasta 4 veces (1 inicial + 3 reintentos)
-      
-      while (retries < maxRetries) {
-        try {
-          scriptResp = await fetch(scriptUrl, { cache: "no-store" });
-          if (scriptResp.ok) break;
-          console.warn(`⚠️ [SHEETS] Intento ${retries + 1} falló con status: ${scriptResp.status}. Reintentando...`);
-        } catch (e) {
-          console.warn(`⚠️ [SHEETS] Intento ${retries + 1} falló con error:`, e, `. Reintentando...`);
-        }
-        retries++;
-        if (retries < maxRetries) {
-           await new Promise(resolve => setTimeout(resolve, 1500)); // esperar 1.5s antes de reintentar
-        }
-      }
-
-      console.log("%c📡 [SHEETS] Respuesta final HTTP status:", "color: cyan", scriptResp ? scriptResp.status : "Fallo Total", scriptResp && scriptResp.ok ? "OK" : "ERROR");
-
-      if (scriptResp && scriptResp.ok) {
-        const lots = await scriptResp.json() || [];
-        console.log("%c📊 [SHEETS] Filas recibidas:", "color: lime; font-weight: bold", lots.length);
-        if (lots.length > 0) {
-           console.log("%c👉 [SHEETS] Muestra fila 0:", "color: lime", lots[0]);
-        } else {
-           console.warn("⚠️ [SHEETS] Se recibió 0 filas. ¿El Sheet está vacío o la URL es incorrecta?");
-        }
-        lots.forEach((lot) => {
-          const fidKey = String(lot['FID'] || lot['fid'] || '');
-          if (fidKey) {
-            fidToApiProps.set(fidKey, {
-              fid: fidKey,
-              number: lot['Número'] || lot['Numero'] || '',
-              direccion: lot['Dirección'] || lot['Direccion'] || '',
-              block: lot['Manzana'] || '',
-              lot: lot['Lote'] || '',
-              area: lot['Área (m²)'] || lot['Area (m²)'] || lot['Area'] || '',
-              price: lot['Precio'] ? String(lot['Precio']).replace(/[$,]/g, '').trim() : '',
-              state: lot['Estado'] || 'disponible',
-              etapa: lot['Etapa'] || '',
-              frente: lot['Colindancia Frente'] || '',
-              derecha: lot['Colindancia Derecha'] || '',
-              izquierda: lot['Colindancia Izquierda'] || '',
-              fondo: lot['Colindancia Fondo'] || '',
-            });
-          }
-        });
-        console.log("%c✅ [SHEETS] fidToApiProps cargado con", "color: lime", fidToApiProps.size, "lotes.");
-      } else {
-        console.error("🔴 [SHEETS] Error HTTP al obtener datos del Apps Script:", scriptResp.status);
-      }
-    } catch (err) {
-      console.error("🔴 [SHEETS] Excepción al llamar Apps Script:", err);
-    }
-
-    // 2) Fusionar propiedades del Google Sheet dentro de cada feature por fid, manteniendo geometry local
-    if (lotesData && Array.isArray(lotesData.features)) {
-      lotesData.features.forEach((feature) => {
-        if (!feature || !feature.properties) return;
-        const localFid = feature.properties.fid;
-        if (localFid == null) return;
-        const api = fidToApiProps.get(String(localFid));
-        if (!api) return;
-
-        // Mapear campos del CSV -> esquema usado en la app
-        // CSV parseado: { block, lot, area, price, state, fid, number, direccion }
-        // Local: { manzana, lote, area, precio, estado, number, direccion }
-        const mapped = {
-          manzana: api.block ?? feature.properties.manzana,
-          lote: api.lot ?? feature.properties.lote,
-          area: api.area ?? feature.properties.area,
-          precio: api.price ?? feature.properties.precio,
-          estado: api.state ? String(api.state).toLowerCase() : feature.properties.estado,
-          etapa: api.etapa ?? feature.properties.etapa,
-          frente: api.frente ?? feature.properties.frente,
-          derecha: api.derecha ?? feature.properties.derecha,
-          izquierda: api.izquierda ?? feature.properties.izquierda,
-          fondo: api.fondo ?? feature.properties.fondo,
-          number: api.number ?? feature.properties.number,
-          direccion: api.direccion ?? feature.properties.direccion,
-        };
-
-        // Escribir propiedades fusionadas sin tocar geometry
-        feature.properties.manzana = mapped.manzana;
-        feature.properties.lote = mapped.lote;
-        feature.properties.area = mapped.area;
-        feature.properties.precio = mapped.precio;
-        feature.properties.estado = mapped.estado;
-        feature.properties.etapa = mapped.etapa;
-        feature.properties.frente = mapped.frente;
-        feature.properties.derecha = mapped.derecha;
-        feature.properties.izquierda = mapped.izquierda;
-        feature.properties.fondo = mapped.fondo;
-        if (mapped.number) feature.properties.number = mapped.number;
-        if (mapped.direccion) feature.properties.direccion = mapped.direccion;
-      });
-    }
-
     lotesPositions = extractLotesPositions(lotesData);
-    // Agregar modelo 3D centrado usando el contorno del proyecto
-    //addTreeModelAtCenter();
 
-    // Process and format lot data once
+    // Process lots with default data (Sheets llegará después silenciosamente)
     const feats = lotesData.features || [];
     processedLots = feats
       .filter((f) => f && f.properties)
@@ -565,21 +483,18 @@ async function loadLotesData() {
       })
       .map((f, idx) => {
         const p = f.properties || {};
-        // Normalize area (already comes as number or numeric string in new schema)
         let areaNum = 0;
         if (typeof p.area === "string") {
           areaNum = parseFloat(p.area.replace(",", ".")) || 0;
         } else if (typeof p.area === "number") {
           areaNum = p.area;
         }
-        // Price
         let precioNum = 0;
         if (typeof p.precio === "string") {
           precioNum = parseFloat(p.precio.replace(",", ".")) || 0;
         } else if (typeof p.precio === "number") {
           precioNum = p.precio;
         }
-
         const estado = p.estado || "disponible";
         const manzana = p.manzana || "";
         const lote = p.lote || "";
@@ -610,6 +525,7 @@ async function loadLotesData() {
     // Create Cesium data source from the loaded data
     lotesDataSource = new window.Cesium.GeoJsonDataSource();
     await lotesDataSource.load(lotesData);
+
 
     // Add labels to each terrain polygon
     const entities = lotesDataSource.entities.values;
@@ -860,6 +776,94 @@ async function loadLotesData() {
     window.dispatchEvent(new CustomEvent('lotCountsUpdated', {
       detail: getLotCountsByStatus()
     }));
+
+    // ══ FASE 2 (silenciosa): Esperar datos de Sheets y aplicar colores reales ══
+    sheetsPromise.then((lots) => {
+      if (!lots || !lots.length) return;
+      // Poblar fidToApiProps
+      fidToApiProps.clear();
+      lots.forEach((lot) => {
+        const fidKey = String(lot["FID"] || lot["fid"] || "");
+        if (!fidKey) return;
+        fidToApiProps.set(fidKey, {
+          fid:       fidKey,
+          number:    lot["Número"]             || lot["Numero"]    || "",
+          direccion: lot["Dirección"]           || lot["Direccion"] || "",
+          block:     lot["Manzana"]             || "",
+          lot:       lot["Lote"]                || "",
+          area:      lot["Área (m²)"]           || lot["Area (m²)"]|| lot["Area"] || "",
+          price:     lot["Precio"] ? String(lot["Precio"]).replace(/[$,]/g, "").trim() : "",
+          state:     lot["Estado"]              || "disponible",
+          etapa:     lot["Etapa"]               || "",
+          frente:    lot["Colindancia Frente"]  || "",
+          derecha:   lot["Colindancia Derecha"] || "",
+          izquierda: lot["Colindancia Izquierda"]|| "",
+          fondo:     lot["Colindancia Fondo"]   || "",
+        });
+      });
+      console.log("[SHEETS] fidToApiProps cargado silenciosamente con", fidToApiProps.size, "lotes.");
+
+      // Aplicar a entidades Cesium ya cargadas
+      if (!lotesDataSource || !lotesDataSource.entities) return;
+      const entities = lotesDataSource.entities.values;
+      entities.forEach((entity) => {
+        if (!entity.polygon || !entity.properties) return;
+        const fidProp = entity.properties.fid;
+        const fid = typeof fidProp?.getValue === "function" ? fidProp.getValue() : fidProp;
+        if (fid == null) return;
+        const api = fidToApiProps.get(String(fid));
+        if (!api) return;
+
+        const estadoValue = String(api.state || "disponible").toLowerCase();
+
+        const setProp = (prop, val) => {
+          if (!val && val !== 0) return;
+          if (entity.properties[prop] && typeof entity.properties[prop].setValue === "function") {
+            entity.properties[prop].setValue(val);
+          } else {
+            entity.properties[prop] = val;
+          }
+        };
+        setProp("estado",    estadoValue);
+        setProp("status",    estadoValue);
+        setProp("precio",    api.price);
+        setProp("price",     api.price);
+        setProp("etapa",     api.etapa);
+        setProp("frente",    api.frente);
+        setProp("derecha",   api.derecha);
+        setProp("izquierda", api.izquierda);
+        setProp("fondo",     api.fondo);
+
+        const newBase = getStatusColor(estadoValue).withAlpha(0.4);
+        entity._baseMaterial = newBase;
+        if (entity !== selected) {
+          entity.polygon.material = newBase;
+          if (entity.polyline) {
+            entity.polyline.material = isLotGridActive()
+              ? createGlowMaterial(getStatusGlowColor(estadoValue), 0.25)
+              : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
+          }
+        } else {
+          applySelectedLotMaterial(entity);
+        }
+      });
+
+      // Actualizar processedLots para filtros
+      if (typeof processedLots !== "undefined") {
+        processedLots.forEach(plot => {
+          const api = fidToApiProps.get(String(plot.fid));
+          if (api) {
+            plot.status = String(api.state || "disponible").toLowerCase();
+            plot.price  = parseFloat(api.price) || 0;
+          }
+        });
+      }
+
+      if (viewer) viewer.scene.requestRender();
+      window.dispatchEvent(new CustomEvent("lotCountsUpdated", { detail: getLotCountsByStatus() }));
+      console.log("[SHEETS] Colores reales aplicados silenciosamente al mapa.");
+    }).catch(err => console.warn("[SHEETS] Error en fase 2:", err));
+
   } catch (error) {
     // console.error("Error loading lotesv2.geojson:", error);
   }
