@@ -48,7 +48,7 @@ const ContactModal = ({ isVisible, type, onClose, onSubmit, currentUser, quotati
     })()
   });
 
-  const [sellers, setSellers] = useState<SellerData[]>([]);
+  const [sellers] = useState<SellerData[]>([]);
 
   const [errors, setErrors] = useState({
     vendedorId: '',

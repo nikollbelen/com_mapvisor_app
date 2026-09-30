@@ -172,18 +172,6 @@ const Sidebar = () => {
     }
   };
 
-  // Camera handlers
-  const handleCamera = (action: string) => {
-    switch (action) {
-      case 'home': if (window.goHome) window.goHome(); break;
-      case 'up': if (window.moveCameraUp) window.moveCameraUp(); break;
-      case 'down': if (window.moveCameraDown) window.moveCameraDown(); break;
-      case 'zoomIn': if (window.zoomIn) window.zoomIn(); break;
-      case 'zoomOut': if (window.zoomOut) window.zoomOut(); break;
-      case 'view3d': if (window.view3D) window.view3D(); break;
-      case 'grid': if (window.toggleGrid) window.toggleGrid(); break;
-    }
-  };
 
   const navBtnClass = (id: string) =>
     `topbar-nav-btn${activeItem === id ? " topbar-nav-btn--active" : ""}`;
