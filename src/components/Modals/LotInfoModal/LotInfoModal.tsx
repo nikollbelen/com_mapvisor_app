@@ -337,7 +337,7 @@ const LotInfoModal = ({
   onClose,
   loteData,
 }: LotInfoModalProps) => {
-  const { user, canUseCotizador } = useAuth();
+  const { user } = useAuth();
   const [showQuotation, setShowQuotation] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
@@ -1748,339 +1748,279 @@ const LotInfoModal = ({
 
   const generatePDFWithText = async (contactData: any): Promise<Blob> => {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageWidth  = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    let yPosition = 20;
+    const margin = 18;
+    const contentWidth = pageWidth - margin * 2;
 
-    // Configuración de colores (similar al HTML)
-    const colors = {
-      primary: '#2d2d2d',
-      secondary: '#444',
-      text: '#333',
-      lightGray: '#666',
-      background: '#ffffff',
-      border: '#ddd',
-      totalBg: '#e8f5e8'
+    const C = {
+      navy:        '#0F1A2E',
+      gold:        '#C5A059',
+      goldLight:   '#E9C176',
+      white:       '#FFFFFF',
+      offWhite:    '#F7F8FA',
+      border:      '#E2E5EC',
+      textDark:    '#111827',
+      textMid:     '#374151',
+      textLight:   '#6B7280',
+      tableHeader: '#1C284C',
+      tableAlt:    '#F3F4F8',
     };
 
-    // Header con fondo azul del tamaño del logo + padding
-    const headerPadding = 5; // 0.5rem en mm
-    const targetLogoHeight = 15; // 2rem ≈ 20 mm
-    let headerHeight = headerPadding * 2 + 20;
+    // ── HEADER ──────────────────────────────────────────────
+    const headerH = 42;
+    pdf.setFillColor(C.navy);
+    pdf.rect(0, 0, pageWidth, headerH, 'F');
+    pdf.setFillColor(C.gold);
+    pdf.rect(0, headerH - 2, pageWidth, 2, 'F');
+
+    let logoLoaded = false;
     try {
-      const logoImage = await loadImage('/images/logo_mikonos.png');
-      const aspectRatio = logoImage.width / (logoImage.height || 1) || 1;
-      const logoHeight = targetLogoHeight;
-      const logoWidth = logoHeight * aspectRatio;
-      headerHeight = logoHeight + headerPadding * 2;
-      const headerWidth = logoWidth + headerPadding * 2;
-      const headerX = (pageWidth - headerWidth) / 2;
-      const headerY = 0;
-      const cornerRadius = 6;
-      pdf.setFillColor('#1C284C');
-      pdf.roundedRect(headerX, headerY, headerWidth, headerHeight, cornerRadius, cornerRadius, 'F');
-      // Cubrir la parte superior para que quede plana
-      pdf.rect(headerX, headerY, headerWidth, cornerRadius, 'F');
-      // Cubrir borde superior para que quede recto
-      pdf.setFillColor('#1C284C');
-      pdf.rect(headerX, headerY, headerWidth, cornerRadius, 'F');
-      pdf.setDrawColor(colors.border);
-      const logoX = headerX + headerPadding;
-      const logoY = headerY + headerPadding;
-      pdf.addImage(logoImage, 'PNG', logoX, logoY, logoWidth, logoHeight);
-      yPosition = headerY + headerHeight + 15;
-    } catch (logoError) {
-      console.warn('No se pudo cargar el logo para el PDF:', logoError);
-      const fallbackWidth = 70;
-      const fallbackHeight = 25;
-      const headerX = (pageWidth - fallbackWidth) / 2;
-      const headerY = 0;
-      pdf.setFillColor('#1C284C');
-      pdf.rect(headerX, headerY, fallbackWidth, fallbackHeight, 'F');
-      yPosition = headerY + fallbackHeight + 15;
-    }
+      const logoImg = await loadImage('/images/logo_mikonos.png');
+      const lH = 18;
+      const lW = lH * (logoImg.width / (logoImg.height || 1));
+      pdf.addImage(logoImg, 'PNG', margin, (headerH - lH) / 2, lW, lH);
+      logoLoaded = true;
+    } catch { /* sin logo */ }
 
-    // Título principal (como el header del HTML)
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(18);
-    pdf.setTextColor(colors.primary);
-    pdf.text('Cotización de Lote', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 5;
+    pdf.setFontSize(15);
+    pdf.setTextColor(C.white);
+    if (logoLoaded) {
+      pdf.text('Nautia Condominios', pageWidth - margin, headerH / 2 + 1.5, { align: 'right' });
+    } else {
+      pdf.text('Nautia Condominios', pageWidth / 2, headerH / 2 + 1.5, { align: 'center' });
+    }
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(C.goldLight);
+    pdf.text('CONDOMINIO RESIDENCIAL PLAYA', pageWidth - margin, headerH / 2 + 6.5, { align: 'right' });
 
-    pdf.setDrawColor(colors.border);
-    pdf.setLineWidth(0.3);
-    pdf.line(20, yPosition, pageWidth - 20, yPosition);
-    yPosition += 8;
+    let yPos = headerH + 14;
 
-    const lotDetails = [
-      { label: 'Lote:', value: lotData.lot || '—' },
-      { label: 'Etapa:', value: lotData.phase ? `Etapa ${lotData.phase}` : '—' },
-      { label: 'Área:', value: lotData.area || '—' },
-      { label: 'Precio:', value: formatPrice(lotData.price) },
-      { label: 'Fecha de cotización:', value: new Date().toLocaleDateString() }
+    // ── TÍTULO + FECHA ───────────────────────────────────────
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(20);
+    pdf.setTextColor(C.textDark);
+    pdf.text('Cotización de Lote', margin, yPos);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(C.textLight);
+    const dateStr = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
+    pdf.text(dateStr, pageWidth - margin, yPos, { align: 'right' });
+
+    yPos += 3;
+    pdf.setFillColor(C.gold);
+    pdf.rect(margin, yPos, contentWidth, 0.8, 'F');
+    yPos += 9;
+
+    // ── TARJETA INFO ─────────────────────────────────────────
+    const cardPad = 10;
+    const colGap  = 8;
+    const colW    = (contentWidth - colGap) / 2;
+    const leftX   = margin;
+    const rightX  = margin + colW + colGap;
+
+    const lotRows: Array<{ label: string; value: string }> = [
+      { label: 'Lote',   value: String(lotData.lot   || '—') },
+      { label: 'Etapa',  value: String(lotData.phase || '—') },
+      { label: 'Área',   value: String(lotData.area  || '—') },
+      { label: 'Precio', value: formatPrice(lotData.price)   },
     ];
-
-    const contactDetails = [
-      { label: 'Cliente:', value: formatClientName(contactData.cliente) || '—' },
-      { label: 'Documento:', value: formatClientDocument(contactData.cliente) || '—' },
-      { label: 'Email cliente:', value: contactData.cliente?.email || '—' },
-      { 
-        label: 'Celular cliente:', 
-        value: contactData.cliente?.telefono 
-          ? formatPhone(contactData.cliente.telefono, contactData.cliente?.codigoPais || '+51') 
-          : '—' 
-      }
+    const clientRows: Array<{ label: string; value: string }> = [
+      { label: 'Cliente',   value: formatClientName(contactData.cliente) || '—' },
+      { label: 'Documento', value: formatClientDocument(contactData.cliente) || '—' },
+      { label: 'Email',     value: contactData.cliente?.email || '—' },
+      { label: 'Celular',   value: contactData.cliente?.telefono
+          ? formatPhone(contactData.cliente.telefono, contactData.cliente?.codigoPais || '+51')
+          : '—' },
     ];
-
     if (user) {
-      contactDetails.push(
-        { label: 'Vendedor:', value: contactData.vendedor?.full_name || '—' },
-        { label: 'Email vendedor:', value: contactData.vendedor?.email || '—' }
+      clientRows.push(
+        { label: 'Vendedor',       value: contactData.vendedor?.full_name || '—' },
+        { label: 'Email vendedor', value: contactData.vendedor?.email || '—' },
       );
     }
 
-    const blockX = 20;
-    const blockWidth = pageWidth - 40;
-    const columnGap = 12;
-    const columnWidth = (blockWidth - columnGap) / 2;
-    const rightColumnX = blockX + columnWidth + columnGap;
-    const labelWidth = 35;
-    const valueMaxWidth = columnWidth - labelWidth + 25;
-    const leftValueStartX = blockX + labelWidth + 2;
-    const rightValueStartX = rightColumnX + labelWidth + 2;
-    const baseLineSpacing = 4.5;
-    const rows = Math.max(lotDetails.length, contactDetails.length);
+    const rowH    = 8;
+    const titleH  = 8;
+    const maxRows = Math.max(lotRows.length, clientRows.length);
+    const cardH   = cardPad + titleH + maxRows * rowH + cardPad;
 
-    type RowLayout = {
-      leftRow?: { label: string; value: string };
-      rightRow?: { label: string; value: string };
-      leftLines: string[];
-      rightLines: string[];
-      rowHeight: number;
-    };
-
-    const rowLayouts: RowLayout[] = [];
-    let blockHeight = 18;
-
-    for (let i = 0; i < rows; i++) {
-      const leftRow = lotDetails[i];
-      const rightRow = contactDetails[i];
-
-      const leftLines = leftRow
-        ? (pdf.splitTextToSize(String(leftRow.value), valueMaxWidth) as string[])
-        : [];
-      const rightLines = rightRow
-        ? (pdf.splitTextToSize(String(rightRow.value), valueMaxWidth) as string[])
-        : [];
-
-      const leftHeight = leftLines.length ? leftLines.length * baseLineSpacing : baseLineSpacing;
-      const rightHeight = rightLines.length ? rightLines.length * baseLineSpacing : baseLineSpacing;
-      const rowHeight = Math.max(leftHeight, rightHeight) + 2;
-      blockHeight += rowHeight;
-
-      rowLayouts.push({
-        leftRow,
-        rightRow,
-        leftLines,
-        rightLines,
-        rowHeight,
-      });
-    }
-
-    pdf.setFillColor('#f9f9f9');
-    pdf.roundedRect(blockX - 2, yPosition - 6, blockWidth + 4, blockHeight, 6, 6, 'F');
-
-    let currentY = yPosition + 4;
-
-    // Títulos de columna
-    //pdf.setFont('helvetica', 'bold');
-    //pdf.setFontSize(11);
-    //pdf.setTextColor(colors.secondary);
-    //pdf.text('Información del Lote', blockX, currentY);
-    //pdf.text('Datos de Contacto', rightColumnX, currentY);
-    //currentY += 6;
-
-    // Contenido
-    rowLayouts.forEach(({ leftRow, rightRow, leftLines, rightLines, rowHeight }) => {
-      const rowY = currentY;
-
-      if (leftRow) {
-      pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
-      pdf.setTextColor(colors.lightGray);
-        pdf.text(leftRow.label, blockX, rowY);
-      pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
-      pdf.setTextColor(colors.text);
-        leftLines.forEach((line, idx) => {
-          const lineY = rowY + idx * baseLineSpacing;
-          pdf.text(line, leftValueStartX, lineY, { maxWidth: valueMaxWidth });
-        });
-      }
-
-      if (rightRow) {
-      pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
-      pdf.setTextColor(colors.lightGray);
-        pdf.text(rightRow.label, rightColumnX, rowY);
-      pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
-      pdf.setTextColor(colors.text);
-        rightLines.forEach((line, idx) => {
-          const lineY = rowY + idx * baseLineSpacing;
-          pdf.text(line, rightValueStartX, lineY, { maxWidth: valueMaxWidth });
-        });
-      }
-
-      currentY += rowHeight;
-    });
-
-    yPosition += blockHeight + 10;
-
-    // Cronograma de pagos (como schedule-table)
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.setTextColor(colors.secondary);
-    pdf.text('Cronograma de Pago', 20, yPosition);
-    yPosition += 5;
-
-    // Línea separadora
-    pdf.setDrawColor(colors.border);
+    pdf.setFillColor(C.offWhite);
+    pdf.roundedRect(margin, yPos, contentWidth, cardH, 5, 5, 'F');
+    pdf.setDrawColor(C.border);
+    pdf.setLineWidth(0.4);
+    pdf.roundedRect(margin, yPos, contentWidth, cardH, 5, 5, 'D');
+    pdf.setDrawColor(C.border);
     pdf.setLineWidth(0.3);
-    pdf.line(20, yPosition, pageWidth - 20, yPosition);
-    yPosition += 12;
+    pdf.line(margin + colW + colGap / 2, yPos + 6, margin + colW + colGap / 2, yPos + cardH - 6);
 
-    const tableX = 20;
-    const tableWidth = pageWidth - 40;
-    const columnWidths = {
-      cuota: tableWidth * 0.15,        // ~25.5mm
-      fecha: tableWidth * 0.5,         // ~85mm
-      porcentaje: tableWidth * 0.175,  // ~29.75mm
-      monto: tableWidth * 0.175        // ~29.75mm
-    };
-    const columnCenters = {
-      cuota: tableX + columnWidths.cuota / 2,
-      fecha: tableX + columnWidths.cuota + columnWidths.fecha / 2,
-      porcentaje: tableX + columnWidths.cuota + columnWidths.fecha + columnWidths.porcentaje / 2,
-      monto: tableX + columnWidths.cuota + columnWidths.fecha + columnWidths.porcentaje + columnWidths.monto - 2
+    const drawInfoCol = (rows: Array<{ label: string; value: string }>, colX: number, title: string) => {
+      let cy = yPos + cardPad;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(C.gold);
+      pdf.text(title.toUpperCase(), colX, cy);
+      cy += titleH;
+      rows.forEach(({ label, value }) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(C.textLight);
+        pdf.text(label, colX, cy);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(C.textDark);
+        const lines = pdf.splitTextToSize(value, colW - 40) as string[];
+        pdf.text(lines[0] || '', colX + colW - cardPad, cy, { align: 'right', maxWidth: colW - 40 });
+        cy += rowH;
+      });
     };
 
-    // Encabezados de la tabla (como schedule-table th)
+    drawInfoCol(lotRows,    leftX,  'Información del Lote');
+    drawInfoCol(clientRows, rightX, 'Datos del Cliente');
+    yPos += cardH + 12;
+
+    // ── TABLA CRONOGRAMA ─────────────────────────────────────
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.setTextColor(colors.text);
-    
-    // Fondo blanco para encabezados
-    pdf.setFillColor('#ffffff');
-    pdf.rect(20, yPosition - 6, pageWidth - 40, 8, 'F');
-    
-    // Borde de tabla para encabezados
-    pdf.setDrawColor(colors.border);
-    pdf.setLineWidth(0.5);
-    pdf.rect(20, yPosition - 6, pageWidth - 40, 8);
-    
-    pdf.text('Concepto', columnCenters.cuota, yPosition, { align: 'center' });
-    pdf.text('Fecha de Vencimiento', columnCenters.fecha, yPosition, { align: 'center' });
-    pdf.text('Porcentaje', columnCenters.porcentaje, yPosition, { align: 'center' });
-    pdf.text('Monto', columnCenters.monto, yPosition, { align: 'right' });
-    yPosition += 6;
+    pdf.setFontSize(13);
+    pdf.setTextColor(C.textDark);
+    pdf.text('Cronograma de Pago', margin, yPos);
+    yPos += 2;
+    pdf.setFillColor(C.gold);
+    pdf.rect(margin, yPos, 28, 0.8, 'F');
+    yPos += 8;
 
-    // Filas de datos (como schedule-table td)
+    const cw = {
+      concepto:   contentWidth * 0.16,
+      fecha:      contentWidth * 0.40,
+      porcentaje: contentWidth * 0.20,
+      monto:      contentWidth * 0.24,
+    };
+    const cx = {
+      concepto:   margin,
+      fecha:      margin + cw.concepto,
+      porcentaje: margin + cw.concepto + cw.fecha,
+      monto:      margin + cw.concepto + cw.fecha + cw.porcentaje,
+    };
+    const rowH2   = 7;
+    const thH     = 8;
+
+    // Cabecera
+    pdf.setFillColor(C.tableHeader);
+    pdf.roundedRect(margin, yPos, contentWidth, thH, 3, 3, 'F');
+    pdf.rect(margin, yPos + thH - 3, contentWidth, 3, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(C.white);
+    const thY = yPos + 5.5;
+    pdf.text('Concepto',            cx.concepto   + cw.concepto   / 2, thY, { align: 'center' });
+    pdf.text('Fecha de Vencimiento',cx.fecha       + cw.fecha       / 2, thY, { align: 'center' });
+    pdf.text('Porcentaje',          cx.porcentaje  + cw.porcentaje  / 2, thY, { align: 'center' });
+    pdf.text('Monto',               cx.monto       + cw.monto       - 4,  thY, { align: 'right'  });
+    yPos += thH;
+
+    const tableStartY = yPos;
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(10);
-    
+    pdf.setFontSize(8.5);
     let totalAmount = 0;
+    let isAlt = false;
+
     schedule.forEach((item) => {
-      // Verificar si necesitamos nueva página
-      if (yPosition > pageHeight - 30) {
-        pdf.addPage();
-        yPosition = 20;
+      if (yPos > pageHeight - 35) { pdf.addPage(); yPos = 20; }
+      if (isAlt) {
+        pdf.setFillColor(C.tableAlt);
+        pdf.rect(margin, yPos, contentWidth, rowH2, 'F');
       }
-
-      // Bordes de celda
-      pdf.setDrawColor(colors.border);
-      pdf.setLineWidth(0.5);
-      pdf.rect(20, yPosition - 4, pageWidth - 40, 6);
-
-      pdf.setTextColor(colors.text);
-      pdf.text(item.item, columnCenters.cuota, yPosition, { align: 'center' });
-      pdf.text(item.date, columnCenters.fecha, yPosition, { align: 'center' });
-      pdf.text(`${item.percentage.toFixed(2)}%`, columnCenters.porcentaje, yPosition, { align: 'center' });
-      pdf.text(formatAmount(item.amount), columnCenters.monto, yPosition, { align: 'right' });
-      yPosition += 6;
+      pdf.setTextColor(C.textMid);
+      const tdY = yPos + 4.8;
+      pdf.text(item.item,                        cx.concepto   + cw.concepto   / 2, tdY, { align: 'center' });
+      pdf.text(item.date,                        cx.fecha       + cw.fecha       / 2, tdY, { align: 'center' });
+      pdf.text(`${item.percentage.toFixed(2)}%`, cx.porcentaje  + cw.porcentaje  / 2, tdY, { align: 'center' });
+      pdf.text(formatAmount(item.amount),         cx.monto       + cw.monto       - 4,  tdY, { align: 'right'  });
+      yPos += rowH2;
+      isAlt = !isAlt;
       totalAmount += item.amount || 0;
     });
 
-    // Fila total (como total-row)
-    yPosition += 0;
-    pdf.setFillColor(colors.totalBg);
-    pdf.rect(20, yPosition - 4, pageWidth - 40, 8, 'F');
-    
-    pdf.setDrawColor(colors.border);
-    pdf.setLineWidth(0.5);
-    pdf.rect(20, yPosition - 4, pageWidth - 40, 8);
+    pdf.setDrawColor(C.border);
+    pdf.setLineWidth(0.4);
+    pdf.rect(margin, tableStartY - thH, contentWidth, schedule.length * rowH2 + thH);
 
+    // Fila TOTAL
+    pdf.setFillColor(C.tableHeader);
+    pdf.roundedRect(margin, yPos, contentWidth, rowH2 + 2, 3, 3, 'F');
+    pdf.rect(margin, yPos, contentWidth, 3, 'F');
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(colors.text);
-    pdf.text('TOTAL', columnCenters.cuota, yPosition + 2, { align: 'center' });
-    pdf.text('100%', columnCenters.porcentaje, yPosition + 2, { align: 'center' });
-    pdf.text(formatAmount(totalAmount), columnCenters.monto, yPosition + 2, { align: 'right' });
+    pdf.setFontSize(9);
+    pdf.setTextColor(C.goldLight);
+    const totalY = yPos + 5.8;
+    pdf.text('TOTAL',                   cx.concepto   + cw.concepto   / 2, totalY, { align: 'center' });
+    pdf.text('100%',                    cx.porcentaje  + cw.porcentaje  / 2, totalY, { align: 'center' });
+    pdf.text(formatAmount(totalAmount), cx.monto       + cw.monto       - 4,  totalY, { align: 'right'  });
+    yPos += rowH2 + 2 + 10;
 
-    // Nota de vigencia
+    // ── VIGENCIA ─────────────────────────────────────────────
     if (contactData?.validity?.days) {
-      yPosition -= 0;
+      pdf.setFillColor(C.offWhite);
+      pdf.roundedRect(margin, yPos, contentWidth, 10, 3, 3, 'F');
+      pdf.setDrawColor(C.gold);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(margin, yPos, contentWidth, 10, 3, 3, 'D');
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.setTextColor(colors.text);
-      pdf.text(`El presente cronograma es válido por ${contactData.validity.days} días`, pageWidth / 2, yPosition + 12, { align: 'center' });
-      yPosition += 15;
-    }
-
-    // Sección de Notas
-    yPosition += 10;
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(12);
-    pdf.setTextColor(colors.secondary);
-    pdf.text('Notas', 20, yPosition);
-    yPosition += 8;
-
-    // Cuadro de notas
-    const notesBoxWidth = pageWidth - 40;
-    const notesBoxX = 20;
-    const notesBoxY = yPosition;
-    const noteFontSize = 10;
-    const noteLineHeight = 4.5;
-    const noteSegments = parseNotesHtmlToSegments(sanitizedNotesHtml);
-    const { lines: noteLines, totalHeight: noteContentHeight } = layoutNoteSegmentsForPdf(
-      pdf,
-      noteSegments,
-      notesBoxWidth - 8,
-      noteLineHeight,
-      noteFontSize
-    );
-    const effectiveContentHeight = noteLines.length ? noteContentHeight : noteLineHeight;
-    const notesBoxHeight = Math.max(20, effectiveContentHeight + 8);
-
-    // Dibujar el cuadro
-    pdf.setDrawColor(colors.border);
-    pdf.setLineWidth(0.5);
-    pdf.setFillColor('#ffffff');
-    pdf.roundedRect(notesBoxX, notesBoxY, notesBoxWidth, notesBoxHeight, 4, 4, 'FD');
-
-    if (noteLines.length) {
-      drawNoteLines(
-        pdf,
-        noteLines,
-        notesBoxX + 4,
-        notesBoxY + 6,
-        noteLineHeight,
-        noteFontSize,
-        { text: colors.text, link: '#0E7BEA' }
+      pdf.setFontSize(9);
+      pdf.setTextColor(C.textMid);
+      pdf.text(
+        `Vigencia: ${contactData.validity.days} días — ${contactData.validity.from || ''} al ${contactData.validity.to || ''}.`,
+        pageWidth / 2, yPos + 6.5, { align: 'center' }
       );
+      yPos += 18;
     }
+
+    // ── NOTAS ────────────────────────────────────────────────
+    const noteFontSize = 9;
+    const noteLineH    = 4.8;
+    const noteSegs     = parseNotesHtmlToSegments(sanitizedNotesHtml);
+    const { lines: noteLines, totalHeight: noteTotalH } = layoutNoteSegmentsForPdf(
+      pdf, noteSegs, contentWidth - 10, noteLineH, noteFontSize
+    );
+    const notesBoxH = Math.max(18, (noteLines.length ? noteTotalH : noteLineH) + 10);
+    if (yPos + notesBoxH + 20 > pageHeight) { pdf.addPage(); yPos = 20; }
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.setTextColor(C.textDark);
+    pdf.text('Notas', margin, yPos);
+    yPos += 2;
+    pdf.setFillColor(C.gold);
+    pdf.rect(margin, yPos, 10, 0.7, 'F');
+    yPos += 6;
+
+    pdf.setFillColor(C.white);
+    pdf.setDrawColor(C.border);
+    pdf.setLineWidth(0.4);
+    pdf.roundedRect(margin, yPos, contentWidth, notesBoxH, 4, 4, 'FD');
+    if (noteLines.length) {
+      drawNoteLines(pdf, noteLines, margin + 5, yPos + 6, noteLineH, noteFontSize, { text: C.textDark, link: '#1C5DBF' });
+    }
+
+    // ── FOOTER ───────────────────────────────────────────────
+    const footerY = pageHeight - 14;
+    pdf.setFillColor(C.navy);
+    pdf.rect(0, footerY, pageWidth, 14, 'F');
+    pdf.setFillColor(C.gold);
+    pdf.rect(0, footerY, pageWidth, 1.5, 'F');
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(C.goldLight);
+    pdf.text('Nautia Condominios — Documento generado digitalmente', margin, footerY + 8);
+    pdf.setTextColor(C.white);
+    pdf.text(new Date().toISOString().split('T')[0], pageWidth - margin, footerY + 8, { align: 'right' });
 
     return pdf.output('blob');
   };
+
 
   // Función unificada para generar documento (PDF o HTML) con formato estándar
   const generateDocument = async (contactData: any, format: 'pdf' | 'html' = 'pdf'): Promise<Blob> => {
@@ -2444,13 +2384,7 @@ const LotInfoModal = ({
     }
   };
 
-  const requireVendedorSession = (): boolean => {
-    if (canUseCotizador) return true;
-    setToastMessage("Debes iniciar sesión como vendedor para realizar esta acción.");
-    window.dispatchEvent(new CustomEvent("openLoginModal"));
-    setTimeout(() => setToastMessage(null), 5000);
-    return false;
-  };
+
 
   const handleQuotationClick = () => {
     if (normalizedLotStatus !== "disponible") return;
@@ -2485,7 +2419,7 @@ const LotInfoModal = ({
 
   // Funciones para los botones de funcionalidades
   const handlePrint = () => {
-    if (!requireVendedorSession()) return;
+
     // Generar o reutilizar código de cotización
     const code = (hasBeenSaved && lastSavedData?.quotationCode) 
       ? lastSavedData.quotationCode 
@@ -2496,7 +2430,7 @@ const LotInfoModal = ({
   };
 
   const handleSave = () => {
-    if (!requireVendedorSession()) return;
+
     // Generar o reutilizar código de cotización
     const code = (hasBeenSaved && lastSavedData?.quotationCode) 
       ? lastSavedData.quotationCode 
@@ -2507,274 +2441,142 @@ const LotInfoModal = ({
   };
 
   const generatePrintContent = (contactData: any) => {
+    const totalAmount = schedule.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const dateStr = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
     return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Cotización de Lote</title>
-        <style>
-          body { 
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            padding-top: 0;
-            color: #333;
-          }
-          @media print {
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            .logo-wrapper {
-              background-color: #1C284C !important;
-              border: none !important;
-              box-shadow: none !important;
-            }
-          }
-          .pdf-header {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 24px;
-          }
-          .logo-wrapper {
-            background: #1C284C;
-            padding: 16px;
-            border-radius: 0 0 8px 8px;
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: none;
-          }
-          .project-text-logo {
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            font-size: 24px;
-            color: #fff;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin: 0;
-            text-align: center;
-          }
-          .project-text-logo.medium {
-            font-size: 18px;
-          }
-          .header { 
-            text-align: center; 
-            margin-bottom: 30px;
-          }
-          .header h1 { 
-            color: #2d2d2d; 
-            margin: 0; 
-            font-size: 24px;
-          }
-          .info-section { 
-            margin-bottom: 30px; 
-          }
-          .info-section h2 { 
-            color: #444; 
-            border-bottom: 1px solid #ccc; 
-            padding-bottom: 10px;
-          }
-          .info-block {
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 24px;
-            background: #f9f9f9;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 24px;
-          }
-          .info-column h3 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
-            color: #2d2d2d;
-          }
-          .info-row {
-            display: flex;
-            justify-content: flex-start;
-            gap: 4px;
-            margin-bottom: 6px;
-            font-size: 12px;
-            line-height: 1.2;
-            align-items: flex-start;
-          }
-          .info-row:last-child {
-            margin-bottom: 0;
-          }
-          .info-label { 
-            font-weight: 600; 
-            color: #555; 
-            min-width: 90px;
-            margin-right: 2px;
-          }
-          .info-value {
-            color: #111;
-            font-weight: 500;
-            text-align: left;
-            flex: 1;
-            word-break: break-word;
-            line-height: 1.3;
-          }
-          .schedule-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 20px;
-          }
-          .schedule-table th, .schedule-table td { 
-            border: 1px solid #ddd; 
-            padding: 12px; 
-            text-align: left;
-          }
-          .schedule-table th { 
-            background: #f0f0f0; 
-            font-weight: bold;
-          }
-          .schedule-table tr:nth-child(even) { 
-            background: #f9f9f9;
-          }
-          .total-row { 
-            background: #e8f5e8 !important; 
-            font-weight: bold;
-          }
-          .notes-section {
-            margin-top: 30px;
-            margin-bottom: 20px;
-          }
-          .notes-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #444;
-            margin-bottom: 8px;
-          }
-          .notes-box {
-            width: 100%;
-            min-height: 50px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 8px;
-            background: #ffffff;
-            font-size: 10px;
-            color: #333;
-            box-sizing: border-box;
-          }
-          .footer { 
-            margin-top: 40px; 
-            text-align: center; 
-            color: #666; 
-            font-size: 12px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="pdf-header">
-          <div class="logo-wrapper">
-            <h1 class="project-text-logo medium">MVP Nautia Condominios</h1>
-          </div>
-        </div>
-        <div class="header">
-          <h1>Cotización de Lote</h1>
-        </div>
-        
-        <div class="info-section">
-          <div class="info-block">
-            <div class="info-column">
-              <div class="info-row">
-                <span class="info-label">Lote:</span>
-                <span class="info-value">${lotData.lot || '—'}</span>
-            </div>
-              <div class="info-row">
-                <span class="info-label">Etapa:</span>
-                <span class="info-value">${lotData.phase ? `Etapa ${lotData.phase}` : '—'}</span>
-            </div>
-              <div class="info-row">
-                <span class="info-label">Área:</span>
-                <span class="info-value">${lotData.area || '—'}</span>
-            </div>
-              <div class="info-row">
-                <span class="info-label">Precio:</span>
-                <span class="info-value">${formatPrice(lotData.price)}</span>
-          </div>
-              <div class="info-row">
-                <span class="info-label">Fecha de cotización:</span>
-                <span class="info-value">${new Date().toLocaleDateString()}</span>
-        </div>
-            </div>
-            <div class="info-column">
-              <div class="info-row">
-                <span class="info-label">Cliente:</span>
-                <span class="info-value">${formatClientName(contactData.cliente) || '—'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Documento:</span>
-                <span class="info-value">${formatClientDocument(contactData.cliente) || '—'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Email cliente:</span>
-                <span class="info-value">${contactData.cliente?.email || '—'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Celular cliente:</span>
-                <span class="info-value">${contactData.cliente?.telefono ? `${formatPhone(contactData.cliente.telefono, contactData.cliente?.codigoPais || '+51')}` : '—'}</span>
-              </div>
-            ${user ? `
-              <div class="info-row">
-                <span class="info-label">Vendedor:</span>
-                <span class="info-value">${contactData.vendedor?.full_name || '—'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Email vendedor:</span>
-                <span class="info-value">${contactData.vendedor?.email || '—'}</span>
-            </div>
-            ` : ''}
-            </div>
-          </div>
-        </div>
-        
-        <div class="info-section">
-          <h2>Cronograma de Pago</h2>
-          <table class="schedule-table">
-            <thead>
-              <tr>
-                <th>Concepto</th>
-                <th>Fecha de Vencimiento</th>
-                <th>Porcentaje</th>
-                <th>Monto</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${schedule.map(item => `
-                <tr>
-                  <td>${item.item}</td>
-                  <td>${item.date}</td>
-                  <td>${item.percentage.toFixed(2)}%</td>
-                  <td>${formatAmount(item.amount)}</td>
-                </tr>
-              `).join('')}
-              <tr class="total-row">
-                <td><strong>TOTAL</strong></td>
-                <td></td>
-                <td><strong>100%</strong></td>
-                <td><strong>${formatAmount(schedule.reduce((sum, item) => sum + (item.amount || 0), 0))}</strong></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        ${contactData?.validity?.days ? `
-        <div class="info-section" style="text-align: center;">
-          <p>El presente cronograma es válido por ${contactData.validity.days} días.</p>
-        </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cotizacion de Lote - Nautia Condominios</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; font-size: 13px; line-height: 1.5; }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { margin: 0; }
+      .pdf-footer { position: fixed; bottom: 0; left: 0; right: 0; }
+    }
+    .pdf-header { background: #0F1A2E; padding: 18px 32px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #C5A059; }
+    .pdf-header-logo img { height: 34px; width: auto; }
+    .pdf-header-brand { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .pdf-header-name { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+    .pdf-header-sub { font-size: 9px; color: #E9C176; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; }
+    .pdf-body { padding: 24px 32px 90px; }
+    .pdf-title-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 3px; }
+    .pdf-title { font-size: 22px; font-weight: 700; color: #111827; }
+    .pdf-date { font-size: 11px; color: #6B7280; }
+    .pdf-divider { height: 3px; background: linear-gradient(to right, #C5A059, transparent); border-radius: 2px; margin-bottom: 20px; }
+    .info-card { display: grid; grid-template-columns: 1fr 1fr; background: #F7F8FA; border: 1px solid #E2E5EC; border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+    .info-col { padding: 16px 20px; }
+    .info-col + .info-col { border-left: 1px solid #E2E5EC; }
+    .info-col-title { font-size: 9px; font-weight: 700; color: #C5A059; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .info-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; gap: 8px; }
+    .info-row:last-child { margin-bottom: 0; }
+    .info-label { font-size: 11px; font-weight: 600; color: #6B7280; white-space: nowrap; }
+    .info-value { font-size: 11px; font-weight: 500; color: #111827; text-align: right; word-break: break-word; }
+    .section-heading { margin-bottom: 10px; }
+    .section-heading h2 { font-size: 15px; font-weight: 700; color: #111827; }
+    .section-bar { height: 3px; width: 32px; background: #C5A059; border-radius: 2px; margin-top: 3px; }
+    .schedule-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .schedule-table thead tr { background: #1C284C !important; }
+    .schedule-table thead th { padding: 9px 10px; font-size: 11px; font-weight: 600; color: #fff !important; text-align: center; }
+    .schedule-table thead th:last-child { text-align: right; }
+    .schedule-table tbody tr:nth-child(even) { background: #F3F4F8; }
+    .schedule-table tbody td { padding: 8px 10px; font-size: 11px; color: #374151; text-align: center; border-bottom: 1px solid #E2E5EC; }
+    .schedule-table tbody td:last-child { text-align: right; }
+    .total-row { background: #1C284C !important; }
+    .total-row td { color: #E9C176 !important; font-weight: 700 !important; padding: 9px 10px !important; }
+    .validity-box { border: 1.5px solid #C5A059; border-radius: 8px; background: #FFFBF0; padding: 9px 14px; font-size: 11px; color: #374151; text-align: center; margin: 16px 0; }
+    .notes-section { margin-top: 20px; }
+    .notes-label { font-size: 10px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; }
+    .notes-box { border: 1px solid #E2E5EC; border-radius: 8px; padding: 10px 12px; background: #fff; min-height: 50px; font-size: 11px; color: #374151; line-height: 1.6; }
+    .pdf-footer { background: #0F1A2E; border-top: 2px solid #C5A059; padding: 7px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .pdf-footer span { font-size: 9px; color: #E9C176; }
+  </style>
+</head>
+<body>
+  <div class="pdf-header">
+    <div class="pdf-header-logo">
+      <img src="/images/logo_mikonos.png" alt="Logo" onerror="this.style.display='none'" />
+    </div>
+    <div class="pdf-header-brand">
+      <div class="pdf-header-name">Nautia Condominios</div>
+      <div class="pdf-header-sub">Condominio Residencial Playa</div>
+    </div>
+  </div>
+  <div class="pdf-body">
+    <div class="pdf-title-row">
+      <h1 class="pdf-title">Cotizacion de Lote</h1>
+      <span class="pdf-date">${dateStr}</span>
+    </div>
+    <div class="pdf-divider"></div>
+    <div class="info-card">
+      <div class="info-col">
+        <div class="info-col-title">Informacion del Lote</div>
+        <div class="info-row"><span class="info-label">Lote</span><span class="info-value">${lotData.lot || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Etapa</span><span class="info-value">${lotData.phase || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Area</span><span class="info-value">${lotData.area || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Precio</span><span class="info-value">${formatPrice(lotData.price)}</span></div>
+        <div class="info-row"><span class="info-label">Fecha cotizacion</span><span class="info-value">${new Date().toLocaleDateString()}</span></div>
+      </div>
+      <div class="info-col">
+        <div class="info-col-title">Datos del Cliente</div>
+        <div class="info-row"><span class="info-label">Cliente</span><span class="info-value">${formatClientName(contactData.cliente) || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Documento</span><span class="info-value">${formatClientDocument(contactData.cliente) || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Email</span><span class="info-value">${contactData.cliente?.email || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Celular</span><span class="info-value">${contactData.cliente?.telefono ? formatPhone(contactData.cliente.telefono, contactData.cliente?.codigoPais || '+51') : '-'}</span></div>
+        ${user ? `
+        <div class="info-row"><span class="info-label">Vendedor</span><span class="info-value">${contactData.vendedor?.full_name || '-'}</span></div>
+        <div class="info-row"><span class="info-label">Email vendedor</span><span class="info-value">${contactData.vendedor?.email || '-'}</span></div>
         ` : ''}
-        
-        <div class="notes-section">
-          <div class="notes-title">Notas</div>
-          <div class="notes-box">${sanitizedNotesHtml || ''}</div>
-        </div>
-      
-      </body>
-      </html>
-    `;
+      </div>
+    </div>
+    <div class="section-heading">
+      <h2>Cronograma de Pago</h2>
+      <div class="section-bar"></div>
+    </div>
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th>Concepto</th>
+          <th>Fecha de Vencimiento</th>
+          <th>Porcentaje</th>
+          <th>Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${schedule.map(item => `
+        <tr>
+          <td>${item.item}</td>
+          <td>${item.date}</td>
+          <td>${item.percentage.toFixed(2)}%</td>
+          <td>${formatAmount(item.amount)}</td>
+        </tr>`).join('')}
+        <tr class="total-row">
+          <td><strong>TOTAL</strong></td>
+          <td></td>
+          <td><strong>100%</strong></td>
+          <td><strong>${formatAmount(totalAmount)}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    ${contactData?.validity?.days ? `
+    <div class="validity-box">
+      Vigencia: <strong>${contactData.validity.days} dias</strong>
+      &mdash; desde ${contactData.validity.from || ''} hasta ${contactData.validity.to || ''}.
+    </div>` : ''}
+    <div class="notes-section">
+      <div class="notes-label">Notas</div>
+      <div class="notes-box">${sanitizedNotesHtml || '<span style="color:#9CA3AF">Sin notas adicionales</span>'}</div>
+    </div>
+  </div>
+  <div class="pdf-footer">
+    <span>Nautia Condominios &mdash; Documento generado digitalmente</span>
+    <span>${new Date().toISOString().split('T')[0]}</span>
+  </div>
+</body>
+</html>`;
   };
 
   // Función generatePDF eliminada - ahora todos usan generatePrintContent

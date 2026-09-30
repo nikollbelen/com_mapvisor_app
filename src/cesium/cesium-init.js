@@ -470,6 +470,11 @@ async function loadLotesData() {
               area: lot['Área (m²)'] || lot['Area (m²)'] || lot['Area'] || '',
               price: lot['Precio'] ? String(lot['Precio']).replace(/[$,]/g, '').trim() : '',
               state: lot['Estado'] || 'disponible',
+              etapa: lot['Etapa'] || '',
+              frente: lot['Colindancia Frente'] || '',
+              derecha: lot['Colindancia Derecha'] || '',
+              izquierda: lot['Colindancia Izquierda'] || '',
+              fondo: lot['Colindancia Fondo'] || '',
             });
           }
         });
@@ -499,6 +504,11 @@ async function loadLotesData() {
           area: api.area ?? feature.properties.area,
           precio: api.price ?? feature.properties.precio,
           estado: api.state ? String(api.state).toLowerCase() : feature.properties.estado,
+          etapa: api.etapa ?? feature.properties.etapa,
+          frente: api.frente ?? feature.properties.frente,
+          derecha: api.derecha ?? feature.properties.derecha,
+          izquierda: api.izquierda ?? feature.properties.izquierda,
+          fondo: api.fondo ?? feature.properties.fondo,
           number: api.number ?? feature.properties.number,
           direccion: api.direccion ?? feature.properties.direccion,
         };
@@ -509,6 +519,11 @@ async function loadLotesData() {
         feature.properties.area = mapped.area;
         feature.properties.precio = mapped.precio;
         feature.properties.estado = mapped.estado;
+        feature.properties.etapa = mapped.etapa;
+        feature.properties.frente = mapped.frente;
+        feature.properties.derecha = mapped.derecha;
+        feature.properties.izquierda = mapped.izquierda;
+        feature.properties.fondo = mapped.fondo;
         if (mapped.number) feature.properties.number = mapped.number;
         if (mapped.direccion) feature.properties.direccion = mapped.direccion;
       });
@@ -824,6 +839,10 @@ async function loadLotesData() {
       }
     }));
     // console.log('✅ Evento cesiumReady disparado');
+    // Notificar conteos iniciales a la leyenda de React
+    window.dispatchEvent(new CustomEvent('lotCountsUpdated', {
+      detail: getLotCountsByStatus()
+    }));
   } catch (error) {
     // console.error("Error loading lotesv2.geojson:", error);
   }
@@ -861,6 +880,11 @@ function updateLotFromWebSocket(lotData) {
           area: lotData.area ?? feature.properties.area,
           precio: lotData.price ?? feature.properties.precio,
           estado: lotData.state ? String(lotData.state).toLowerCase() : feature.properties.estado,
+          etapa: lotData.etapa ?? feature.properties.etapa,
+          frente: lotData.frente ?? feature.properties.frente,
+          derecha: lotData.derecha ?? feature.properties.derecha,
+          izquierda: lotData.izquierda ?? feature.properties.izquierda,
+          fondo: lotData.fondo ?? feature.properties.fondo,
         };
 
         // Actualizar propiedades fusionadas
@@ -869,6 +893,11 @@ function updateLotFromWebSocket(lotData) {
         feature.properties.area = mapped.area;
         feature.properties.precio = mapped.precio;
         feature.properties.estado = mapped.estado;
+        feature.properties.etapa = mapped.etapa;
+        feature.properties.frente = mapped.frente;
+        feature.properties.derecha = mapped.derecha;
+        feature.properties.izquierda = mapped.izquierda;
+        feature.properties.fondo = mapped.fondo;
 
         // Actualizar extras del API
         feature.properties._api = {
@@ -889,6 +918,11 @@ function updateLotFromWebSocket(lotData) {
           area: lotData.area ?? 0,
           precio: lotData.price ?? 0,
           estado: lotData.state ? String(lotData.state).toLowerCase() : "disponible",
+          etapa: lotData.etapa ?? "",
+          frente: lotData.frente ?? "",
+          derecha: lotData.derecha ?? "",
+          izquierda: lotData.izquierda ?? "",
+          fondo: lotData.fondo ?? "",
         };
       }
     }
@@ -915,6 +949,11 @@ function updateLotFromWebSocket(lotData) {
         if (entity.properties.area) entity.properties.area.setValue(mapped.area);
         if (entity.properties.precio) entity.properties.precio.setValue(mapped.precio);
         if (entity.properties.estado) entity.properties.estado.setValue(mapped.estado);
+        if (entity.properties.etapa) entity.properties.etapa.setValue(mapped.etapa);
+        if (entity.properties.frente) entity.properties.frente.setValue(mapped.frente);
+        if (entity.properties.derecha) entity.properties.derecha.setValue(mapped.derecha);
+        if (entity.properties.izquierda) entity.properties.izquierda.setValue(mapped.izquierda);
+        if (entity.properties.fondo) entity.properties.fondo.setValue(mapped.fondo);
 
         // Actualizar color del polígono y baseMaterial según el estado
         const statusColor = getStatusColor(mapped.estado);
@@ -923,11 +962,13 @@ function updateLotFromWebSocket(lotData) {
           entity._baseMaterial = newBase;
           if (entity !== selected) {
             entity.polygon.material = newBase;
+          } else {
+            applySelectedLotMaterial(entity);
           }
         }
 
         // Actualizar el color del borde brillante (polyline) según la cuadrícula
-        if (entity.polyline) {
+        if (entity.polyline && entity !== selected) {
           entity.polyline.material = isLotGridActive() ? createGlowMaterial(getStatusGlowColor(mapped.estado), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
         }
 
@@ -951,6 +992,10 @@ function updateLotFromWebSocket(lotData) {
             })
           );
           // console.log(`[WebSocket] Evento loteUpdated disparado para lote seleccionado: fid=${fidKey}`);
+        }
+        
+        if (typeof viewer !== 'undefined' && viewer) {
+          viewer.scene.requestRender();
         }
       }
     }
@@ -1021,6 +1066,10 @@ function updateLotFromWebSocket(lotData) {
       window.loadLotData();
       // console.log(`[WebSocket] Visualización actualizada para lote fid=${fidKey}`);
     }
+    // Notificar conteos actualizados a la leyenda de React
+    window.dispatchEvent(new CustomEvent('lotCountsUpdated', {
+      detail: getLotCountsByStatus()
+    }));
   } catch (error) {
     console.error('[WebSocket] Error al actualizar lote:', error, lotData);
   }
@@ -1119,10 +1168,9 @@ function setupLoteInteractions() {
 
   window.getPhase = (entity) => {
     if (!entity || !entity.properties) return undefined;
-    const _api = entity.properties._api;
-    if (!_api) return undefined;
-    const apiValue = typeof _api.getValue === "function" ? _api.getValue() : _api;
-    return apiValue?.phase;
+    const etapa = entity.properties.etapa;
+    const val = typeof etapa?.getValue === "function" ? etapa.getValue() : etapa;
+    return val || "1"; // Default a 1 si no hay etapa
   };
 
   // Function to calculate lot boundaries/colindancias
@@ -1130,19 +1178,17 @@ function setupLoteInteractions() {
     if (!entity || !entity.properties)
       return { left: "N/A", right: "N/A", front: "N/A", back: "N/A" };
 
-    // Get lot number and manzana to calculate boundaries
-    const lote = entity.properties.lote;
-    const valLote =
-      typeof lote?.getValue === "function" ? lote.getValue() : lote;
-
-    // Simple boundary calculation based on lot number
-    const lotNumber = parseInt(valLote);
+    const getProp = (key) => {
+      const prop = entity.properties[key];
+      const val = typeof prop?.getValue === "function" ? prop.getValue() : prop;
+      return val && String(val).trim() !== "" ? String(val) : "N/A";
+    };
 
     return {
-      left: lotNumber > 9 ? `${lotNumber - 1}.5 ML` : `${lotNumber + 1}.5 ML`,
-      right: lotNumber > 9 ? `${lotNumber - 2}.5 ML` : `${lotNumber + 2}.5 ML`,
-      front: lotNumber > 9 ? `${lotNumber - 3}.5 ML` : `${lotNumber + 3}.5 ML`,
-      back: lotNumber > 9 ? `${lotNumber - 4}.5 ML` : `${lotNumber + 4}.5 ML`,
+      left: getProp("izquierda"),
+      right: getProp("derecha"),
+      front: getProp("frente"),
+      back: getProp("fondo"),
     };
   };
 
@@ -1320,6 +1366,11 @@ async function pollGoogleSheet() {
 
     const lots = await scriptResp.json() || [];
     console.log("%c🔄 [SHEETS POLL] Recibidas:", "color: cyan", lots.length, "filas -", new Date().toLocaleTimeString());
+    
+    if (lots.length > 0) {
+      console.log("%c⚠️ [SHEETS DEBUG] Datos exactos de la primera fila:", "color: yellow; font-size: 14px", lots[0]);
+      console.log("%c⚠️ [SHEETS DEBUG] Encabezados detectados:", "color: yellow; font-size: 14px", Object.keys(lots[0]));
+    }
 
     const sheetDataByFid = {};
     lots.forEach((lot) => {
@@ -1328,6 +1379,11 @@ async function pollGoogleSheet() {
         sheetDataByFid[fidKey] = {
           price: lot['Precio'] ? String(lot['Precio']).replace(/[$,]/g, '').trim() : '',
           state: (lot['Estado'] || 'disponible').toLowerCase(),
+          etapa: lot['Etapa'] || '',
+          frente: lot['Colindancia Frente'] || '',
+          derecha: lot['Colindancia Derecha'] || '',
+          izquierda: lot['Colindancia Izquierda'] || '',
+          fondo: lot['Colindancia Fondo'] || '',
         };
       }
     });
@@ -1342,8 +1398,8 @@ async function pollGoogleSheet() {
       const sheetData = sheetDataByFid[String(entityFid)];
       if (!sheetData) return;
 
-      const currentState = entity.properties.status ? (typeof entity.properties.status.getValue === 'function' ? entity.properties.status.getValue() : entity.properties.status) : null;
-      const currentPrice = entity.properties.price ? (typeof entity.properties.price.getValue === 'function' ? entity.properties.price.getValue() : entity.properties.price) : null;
+      const currentState = window.getEstado(entity);
+      const currentPrice = window.getPrecio(entity);
 
       let changed = false;
       if (currentState !== sheetData.state) {
@@ -1351,6 +1407,11 @@ async function pollGoogleSheet() {
            entity.properties.status.setValue(sheetData.state);
         } else {
            entity.properties.status = sheetData.state;
+        }
+        if (entity.properties.estado && typeof entity.properties.estado.setValue === 'function') {
+           entity.properties.estado.setValue(sheetData.state);
+        } else {
+           entity.properties.estado = sheetData.state;
         }
         changed = true;
         anyChanged = true;
@@ -1361,8 +1422,47 @@ async function pollGoogleSheet() {
         } else {
            entity.properties.price = sheetData.price;
         }
+        if (entity.properties.precio && typeof entity.properties.precio.setValue === 'function') {
+           entity.properties.precio.setValue(sheetData.price);
+        } else {
+           entity.properties.precio = sheetData.price;
+        }
         changed = true;
         anyChanged = true;
+      }
+      
+      const currentEtapa = window.getPhase(entity);
+      if (String(currentEtapa) !== String(sheetData.etapa || "1")) {
+        if (entity.properties.etapa && typeof entity.properties.etapa.setValue === 'function') {
+           entity.properties.etapa.setValue(sheetData.etapa);
+        } else {
+           entity.properties.etapa = sheetData.etapa;
+        }
+        changed = true;
+        anyChanged = true;
+      }
+
+      const currentCol = window.getColindancias(entity);
+      if (
+        (sheetData.frente && String(currentCol.front) !== String(sheetData.frente)) || 
+        (sheetData.derecha && String(currentCol.right) !== String(sheetData.derecha)) ||
+        (sheetData.izquierda && String(currentCol.left) !== String(sheetData.izquierda)) ||
+        (sheetData.fondo && String(currentCol.back) !== String(sheetData.fondo))
+      ) {
+          if (entity.properties.frente && typeof entity.properties.frente.setValue === 'function') entity.properties.frente.setValue(sheetData.frente);
+          else entity.properties.frente = sheetData.frente;
+
+          if (entity.properties.derecha && typeof entity.properties.derecha.setValue === 'function') entity.properties.derecha.setValue(sheetData.derecha);
+          else entity.properties.derecha = sheetData.derecha;
+
+          if (entity.properties.izquierda && typeof entity.properties.izquierda.setValue === 'function') entity.properties.izquierda.setValue(sheetData.izquierda);
+          else entity.properties.izquierda = sheetData.izquierda;
+
+          if (entity.properties.fondo && typeof entity.properties.fondo.setValue === 'function') entity.properties.fondo.setValue(sheetData.fondo);
+          else entity.properties.fondo = sheetData.fondo;
+
+          changed = true;
+          anyChanged = true;
       }
 
       if (changed && entity.polygon) {
@@ -1377,6 +1477,8 @@ async function pollGoogleSheet() {
           if (entity.polyline && typeof isLotGridActive === "function") {
              entity.polyline.material = isLotGridActive() ? createGlowMaterial(getStatusGlowColor(estadoValue), 0.25) : createGlowMaterial(window.Cesium.Color.WHITE.withAlpha(0.4), 0.2);
           }
+        } else {
+          applySelectedLotMaterial(entity);
         }
       }
     });
@@ -1397,6 +1499,11 @@ async function pollGoogleSheet() {
     if (anyChanged && selected) {
         const detail = buildLoteSelectedDetail(selected);
         window.dispatchEvent(new CustomEvent("loteSelected", { detail }));
+    }
+
+    // Force redraw map if there are any changes
+    if (anyChanged && typeof viewer !== 'undefined' && viewer) {
+        viewer.scene.requestRender();
     }
 
   } catch (err) {
@@ -2864,6 +2971,73 @@ function toggleGrid() {
   if (viewer) viewer.scene.requestRender();
   return willBeActive;
 }
+
+// -------------------------------------------------------
+// Filtro de lotes por estado (leyenda interactiva)
+// activeStatuses: array de strings, ej: ["disponible","reservado"]
+// Si el array está vacío o contiene los 4 estados → sin filtro (todos visibles)
+// -------------------------------------------------------
+function filterLotsByStatus(activeStatuses) {
+  if (!lotesDataSource) return;
+
+  const allKeys = ["disponible", "reservado", "vendido", "negociacion"];
+  const showAll =
+    !activeStatuses ||
+    activeStatuses.length === 0 ||
+    activeStatuses.length === allKeys.length;
+
+  const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);
+
+  entitiesAll.forEach((e) => {
+    // Lotes sin número de lote asignado → siempre invisible
+    const loteValue = e.properties.lote ? e.properties.lote.getValue() : "";
+    if (loteValue === "") return;
+
+    const estadoProp = e.properties?.estado;
+    const estadoValue =
+      typeof estadoProp?.getValue === "function"
+        ? estadoProp.getValue()
+        : estadoProp;
+
+    const normalizedEstado = normalizeLotStatus(estadoValue);
+    const shouldShow = showAll || activeStatuses.includes(normalizedEstado);
+
+    // Solo aplica si la cuadrícula está activa; de lo contrario Cesium ya los tiene ocultos
+    if (isLotGridActive()) {
+      e.polygon.show = shouldShow;
+      if (e.label) e.label.show = shouldShow;
+    }
+  });
+
+  if (viewer) viewer.scene.requestRender();
+}
+
+// Devuelve el conteo de lotes por estado: { disponible: N, reservado: N, vendido: N, negociacion: N }
+function getLotCountsByStatus() {
+  const counts = { disponible: 0, reservado: 0, vendido: 0, negociacion: 0 };
+  if (!lotesDataSource) return counts;
+
+  const entitiesAll = lotesDataSource.entities.values.filter((e) => e.polygon);
+
+  entitiesAll.forEach((e) => {
+    const loteValue = e.properties.lote ? e.properties.lote.getValue() : "";
+    if (loteValue === "") return;
+
+    const estadoProp = e.properties?.estado;
+    const estadoValue =
+      typeof estadoProp?.getValue === "function"
+        ? estadoProp.getValue()
+        : estadoProp;
+
+    const key = normalizeLotStatus(estadoValue);
+    if (key in counts) counts[key]++;
+  });
+
+  return counts;
+}
+
+window.filterLotsByStatus = filterLotsByStatus;
+window.getLotCountsByStatus = getLotCountsByStatus;
 
 window.moveCameraUp = moveCameraUp;
 window.moveCameraDown = moveCameraDown;

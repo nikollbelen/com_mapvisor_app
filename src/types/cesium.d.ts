@@ -58,7 +58,10 @@ declare global {
     zoomOut: () => void;
     goHome: () => void;
     view3D: () => void;
-    toggleGrid: () => void;
+    toggleGrid: () => boolean | void;
+    filterLotsByStatus?: (activeStatuses: string[]) => void;
+    getLotCountsByStatus?: () => Record<string, number>;
+    closeLotInfoModal?: () => void;
     loteClickHandler?: any;
     setTimeOfDay?: (hour: number) => void;
     viewer?: any;

@@ -108,3 +108,119 @@
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ================================================ */
+/* Legend Filter Buttons                            */
+/* ================================================ */
+
+/* Botón base */
+.legend-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    opacity 0.2s ease;
+  white-space: nowrap;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover: leve elevación y fondo */
+.legend-filter-btn:hover:not(.legend-filter-btn--disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  transform: scale(1.05);
+}
+
+.legend-filter-btn:active:not(.legend-filter-btn--disabled) {
+  transform: scale(0.97);
+}
+
+/* Estado ACTIVO — borde y fondo con color de estado */
+.legend-filter-btn--active {
+  background: color-mix(in srgb, var(--legend-color, #fff) 14%, transparent);
+  border-color: color-mix(in srgb, var(--legend-color, #fff) 55%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--legend-color, #fff) 20%, transparent);
+}
+
+.legend-filter-btn--active:hover {
+  background: color-mix(in srgb, var(--legend-color, #fff) 22%, transparent);
+  transform: scale(1.06);
+}
+
+/* Estado INACTIVO — semitransparente */
+.legend-filter-btn--inactive {
+  opacity: 0.45;
+}
+
+.legend-filter-btn--inactive:hover {
+  opacity: 0.75;
+}
+
+/* Estado DISABLED (sin cuadrícula) */
+.legend-filter-btn--disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Dot de color */
+.legend-filter-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Label */
+.legend-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  transition: color 0.2s ease;
+}
+
+.legend-filter-btn--active .legend-filter-label {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Contador de lotes */
+.legend-filter-count {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 1px 5px;
+  min-width: 18px;
+  text-align: center;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.legend-filter-btn--active .legend-filter-count {
+  background: color-mix(in srgb, var(--legend-color, #fff) 18%, transparent);
+}
+
+/* Variante mobile — ocupa el ancho del panel */
+.legend-filter-btn--mobile {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  justify-content: flex-start;
+}
+
+.legend-filter-btn--mobile .legend-filter-count {
+  margin-left: auto;
+}
+

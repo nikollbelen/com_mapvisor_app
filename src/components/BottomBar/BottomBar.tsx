@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { LOT_STATUS_LEGEND_ITEMS, LOT_STATUS_COLORS } from '../../constants/lotStatusColors';
+import type { LotStatusKey } from '../../constants/lotStatusColors';
 import './BottomBar.css';
 
 interface BottomBarProps {
   entornoReopenVisible?: boolean;
   onEntornoReopen?: () => void;
 }
+
+type LotCounts = Record<LotStatusKey, number>;
+
+const ALL_STATUS_KEYS = LOT_STATUS_LEGEND_ITEMS.map((i) => i.key);
 
 const BottomBar = ({
   entornoReopenVisible = false,
@@ -17,6 +22,19 @@ const BottomBar = ({
   const [gridActive, setGridActive] = useState(true);
   // 3D empieza INACTIVO (no enfocado hasta que el usuario lo presione)
   const [view3dActive, setView3dActive] = useState(false);
+
+  // Filtros activos: cuando grid está on → todos activos por defecto
+  const [activeFilters, setActiveFilters] = useState<Set<LotStatusKey>>(
+    new Set(ALL_STATUS_KEYS)
+  );
+
+  // Contadores de lotes por estado
+  const [lotCounts, setLotCounts] = useState<LotCounts>({
+    disponible: 0,
+    reservado: 0,
+    vendido: 0,
+    negociacion: 0,
+  });
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -30,31 +48,81 @@ const BottomBar = ({
   // Sincronizar gridActive con Cesium cuando éste reinicia el estado (ej. setupLoteInteractions)
   useEffect(() => {
     const handleGridStateChanged = (e: CustomEvent) => {
-      setGridActive(e.detail.active);
+      const isActive = e.detail.active as boolean;
+      setGridActive(isActive);
+      if (isActive) {
+        // Cuadrícula activada → todos los filtros activos y sin filtro en Cesium
+        const allSet = new Set<LotStatusKey>(ALL_STATUS_KEYS);
+        setActiveFilters(allSet);
+        if (window.filterLotsByStatus) {
+          window.filterLotsByStatus(ALL_STATUS_KEYS);
+        }
+      } else {
+        // Cuadrícula desactivada → todos los filtros inactivos
+        setActiveFilters(new Set());
+      }
     };
     window.addEventListener('gridStateChanged', handleGridStateChanged as EventListener);
     return () => window.removeEventListener('gridStateChanged', handleGridStateChanged as EventListener);
   }, []);
 
+  // Escuchar actualizaciones de conteo de lotes desde Cesium
+  useEffect(() => {
+    const handleLotCountsUpdated = (e: CustomEvent) => {
+      setLotCounts(e.detail as LotCounts);
+    };
+    window.addEventListener('lotCountsUpdated', handleLotCountsUpdated as EventListener);
+
+    // Intentar obtener conteos iniciales si Cesium ya cargó
+    const tryGetCounts = () => {
+      if (window.getLotCountsByStatus) {
+        setLotCounts(window.getLotCountsByStatus() as LotCounts);
+      }
+    };
+    tryGetCounts();
+    const timer = setTimeout(tryGetCounts, 3000);
+
+    return () => {
+      window.removeEventListener('lotCountsUpdated', handleLotCountsUpdated as EventListener);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // -------------------------------------------------------
+  // Handler de filtro de leyenda (multi-selección)
+  // -------------------------------------------------------
+  const handleLegendFilter = (key: LotStatusKey) => {
+    if (!gridActive) return; // Sin cuadrícula no hay nada que filtrar
+
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        // Evitar que queden todos desactivados (mínimo 1 activo)
+        if (next.size === 1) return prev;
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+
+      // Llamar a Cesium para aplicar el filtro visual
+      if (window.filterLotsByStatus) {
+        window.filterLotsByStatus(Array.from(next));
+      }
+      return next;
+    });
+  };
+
   // -------------------------------------------------------
   // Handlers de cámara
   // -------------------------------------------------------
-  // moveOrReset(action):
-  //   - Si 3D está ACTIVO: va a home, desactiva 3D y luego
-  //     ejecuta el movimiento (espera la animación de flyTo).
-  //   - Si 3D NO está activo: ejecuta el movimiento directo.
-  // -------------------------------------------------------
-
-  const MOVE_DELAY_MS = 1600; // igual a la duración de flyToLotesView (1.5s) + buffer
+  const MOVE_DELAY_MS = 1600;
 
   const moveOrReset = (action: () => void) => {
     if (view3dActive) {
-      // 3D está encendido: primero regresar a home, apagar 3D, luego mover
       setView3dActive(false);
       if (window.goHome) window.goHome();
       setTimeout(action, MOVE_DELAY_MS);
     } else {
-      // 3D apagado: ejecutar directamente sin espera
       action();
     }
   };
@@ -88,12 +156,10 @@ const BottomBar = ({
         break;
       }
       case 'grid': {
-        // Usar el valor de retorno de toggleGrid() como fuente de verdad
-        // para evitar desincronización entre el estado JS y el estado React
         if (window.toggleGrid) {
           const newState = window.toggleGrid();
           if (typeof newState === 'boolean') setGridActive(newState);
-          else setGridActive(prev => !prev); // fallback
+          else setGridActive(prev => !prev);
         } else {
           setGridActive(prev => !prev);
         }
@@ -102,12 +168,71 @@ const BottomBar = ({
     }
   };
 
+  // -------------------------------------------------------
+  // Render helper: botón de leyenda (desktop)
+  // -------------------------------------------------------
+  const renderLegendButton = (item: typeof LOT_STATUS_LEGEND_ITEMS[number], mobile = false) => {
+    const { key, label } = item;
+    const { hex, glowRgba } = LOT_STATUS_COLORS[key];
+    const isActive = gridActive && activeFilters.has(key);
+    const isDisabled = !gridActive;
+    const count = lotCounts[key];
+
+    return (
+      <button
+        key={key}
+        type="button"
+        className={[
+          'legend-filter-btn',
+          mobile ? 'legend-filter-btn--mobile' : '',
+          isActive ? 'legend-filter-btn--active' : 'legend-filter-btn--inactive',
+          isDisabled ? 'legend-filter-btn--disabled' : '',
+        ].join(' ')}
+        onClick={() => handleLegendFilter(key)}
+        title={
+          isDisabled
+            ? 'Activa la cuadrícula para filtrar'
+            : `${isActive ? 'Ocultar' : 'Mostrar'} lotes ${label.toLowerCase()}`
+        }
+        aria-pressed={isActive}
+        style={
+          isActive
+            ? ({ '--legend-color': hex, '--legend-glow': glowRgba } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {/* Dot de color */}
+        <span
+          className="legend-filter-dot"
+          style={{
+            backgroundColor: isActive ? hex : 'rgba(255,255,255,0.2)',
+            boxShadow: isActive ? `0 0 7px 1px ${glowRgba}` : 'none',
+            transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+          }}
+        />
+        {/* Label */}
+        <span className="legend-filter-label">{label}</span>
+        {/* Contador de lotes */}
+        {count > 0 && (
+          <span
+            className="legend-filter-count"
+            style={{
+              color: isActive ? hex : 'rgba(255,255,255,0.3)',
+              transition: 'color 0.2s ease',
+            }}
+          >
+            {count}
+          </span>
+        )}
+      </button>
+    );
+  };
+
 
   return (
     <>
       {/* ============================================= */}
       {/* HORIZONTAL / DESKTOP LAYOUT                   */}
-      {/* Exact copy from diseñoHorizontal/code.html    */}
       {/* ============================================= */}
       {!isMobile && (
         <footer className="fixed bottom-floating-offset left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-3">
@@ -196,28 +321,16 @@ const BottomBar = ({
             </div>
           </div>
 
-          {/* Legend Bar */}
-          <div className="hud-glass-panel hud-glass-glow-top px-8 py-4 rounded-full flex items-center gap-8">
-            <div className="flex items-center gap-unit group cursor-default">
-              <span className="hud-status-dot bg-[#4ADE80] shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
-              <span className="text-on-surface text-[12px] font-label-caps uppercase tracking-wider group-hover:text-primary-container transition-colors">Disponible</span>
-            </div>
-            <div className="flex items-center gap-unit group cursor-default">
-              <span className="hud-status-dot bg-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span>
-              <span className="text-on-surface text-[12px] font-label-caps uppercase tracking-wider group-hover:text-primary-container transition-colors">Reservado</span>
-            </div>
-            <div className="flex items-center gap-unit group cursor-default">
-              <span className="hud-status-dot bg-[#F87171] shadow-[0_0_8px_rgba(248,113,113,0.5)]"></span>
-              <span className="text-on-surface text-[12px] font-label-caps uppercase tracking-wider group-hover:text-primary-container transition-colors">Vendido</span>
-            </div>
-            <div className="flex items-center gap-unit group cursor-default">
-              <span className="hud-status-dot bg-[#60A5FA] shadow-[0_0_8px_rgba(96,165,250,0.5)]"></span>
-              <span className="text-on-surface text-[12px] font-label-caps uppercase tracking-wider group-hover:text-primary-container transition-colors">En negociación</span>
-            </div>
-            <div className="h-6 w-px bg-outline-variant"></div>
-            <div className="flex items-center gap-unit text-on-surface-variant">
-              <span className="text-[10px] font-label-caps uppercase tracking-widest">Total Lotes</span>
-              <span className="text-on-surface font-bold text-sm">7</span>
+          {/* Legend Bar — Botones de filtro interactivos */}
+          <div className="hud-glass-panel hud-glass-glow-top px-5 py-3 rounded-full flex items-center gap-1">
+            {LOT_STATUS_LEGEND_ITEMS.map((item) => renderLegendButton(item))}
+            <div className="h-6 w-px bg-outline-variant/40 mx-2" />
+            {/* Total de lotes */}
+            <div className="flex items-center gap-unit text-on-surface-variant px-1">
+              <span className="text-[10px] font-label-caps uppercase tracking-widest">Total</span>
+              <span className="text-on-surface font-bold text-sm">
+                {Object.values(lotCounts).reduce((a, b) => a + b, 0) || '—'}
+              </span>
             </div>
           </div>
         </footer>
@@ -225,7 +338,6 @@ const BottomBar = ({
 
       {/* ============================================= */}
       {/* VERTICAL / MOBILE LAYOUT                      */}
-      {/* Exact copy from diseñoVertical/normal/code.html */}
       {/* ============================================= */}
       {isMobile && (
         <>
@@ -249,22 +361,8 @@ const BottomBar = ({
           <div className="fixed bottom-32 right-0 left-0 z-10 flex flex-col items-center pointer-events-none">
             {showLegend && (
               <div className="px-6 mb-4 pointer-events-auto">
-                <div className="hud-glass-panel hud-gold-edge p-4 rounded-2xl shadow-2xl space-y-3 max-w-[240px] mx-auto">
-                  {LOT_STATUS_LEGEND_ITEMS.map(({ key, label }) => {
-                    const { hex, glowRgba } = LOT_STATUS_COLORS[key];
-                    return (
-                      <div key={key} className="flex items-center gap-3">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{
-                            backgroundColor: hex,
-                            boxShadow: `0 0 8px ${glowRgba}`,
-                          }}
-                        />
-                        <span className="font-label-caps text-label-caps text-on-surface">{label}</span>
-                      </div>
-                    );
-                  })}
+                <div className="hud-glass-panel hud-gold-edge p-4 rounded-2xl shadow-2xl space-y-2 max-w-[260px] mx-auto">
+                  {LOT_STATUS_LEGEND_ITEMS.map((item) => renderLegendButton(item, true))}
                 </div>
               </div>
             )}
@@ -284,7 +382,7 @@ const BottomBar = ({
           {/* BottomNavBar (7 Camera Control Icons) - from diseñoVertical/normal/code.html */}
           <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 px-4 py-3 bg-surface-container/30 dark:bg-surface-container-highest/40 backdrop-blur-md border border-white/30 dark:border-outline/20 shadow-lg shadow-primary/10 rounded-full w-[90%] max-w-sm justify-between">
             {/* Home */}
-            <button className="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full w-10 h-10 hover:scale-110 transition-transform" onClick={() => handleCamera('home')}>
+            <button className="flex flex-col items-center justify-center text-on-surface-variant w-10 h-10 hover:scale-110 transition-transform" onClick={() => handleCamera('home')}>
               <span className="material-symbols-outlined text-[20px]">home</span>
             </button>
             {/* Up */}
@@ -304,13 +402,16 @@ const BottomBar = ({
               <span className="material-symbols-outlined text-[20px]">zoom_out</span>
             </button>
             {/* 3D View */}
-            <button className="flex flex-col items-center justify-center text-on-surface-variant w-10 h-10 hover:scale-110 transition-transform" onClick={() => handleCamera('view3d')}>
-              <span className="material-symbols-outlined text-[20px]">3d_rotation</span>
+            <button 
+              className={`flex flex-col items-center justify-center w-10 h-10 hover:scale-110 transition-transform ${view3dActive ? 'text-primary' : 'text-on-surface-variant'}`} 
+              onClick={() => handleCamera('view3d')}
+            >
+              <span className="material-symbols-outlined text-[20px]" style={view3dActive ? { fontVariationSettings: '"FILL" 1' } : {}}>3d_rotation</span>
             </button>
             {/* Grid — id="grid" requerido por cesium-init (toggleGrid / selección colorida) */}
             <button
               id="grid"
-              className="flex flex-col items-center justify-center text-on-surface-variant w-10 h-10 hover:scale-110 transition-transform [&.active]:text-primary"
+              className={`flex flex-col items-center justify-center w-10 h-10 hover:scale-110 transition-transform ${gridActive ? 'text-primary' : 'text-on-surface-variant'}`}
               onClick={() => handleCamera('grid')}
             >
               <span className="material-symbols-outlined text-[20px]">grid_on</span>
