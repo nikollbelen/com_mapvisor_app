@@ -381,12 +381,9 @@ const LotInfoModal = ({
     return () => controller.abort();
   }, []);
 
-  const formatLotLabel = (direccion?: string, phase?: string) => {
-    const normalizedPhase = (phase || '').toString().replace(/^\s*etapa\s+/i, '').trim();
-    const stageText = normalizedPhase ? `${normalizedPhase}` : '';
-  
+  const formatLotLabel = (direccion?: string) => {
     if (!direccion) {
-      return stageText ? `${stageText} - Lote sin identificar` : 'Lote sin identificar';
+      return 'Lote sin identificar';
     }
   
     const match = direccion.match(/Mz\.\s*([A-Za-z0-9]+)\s*-\s*(?:Lote|Lt\.?)\s*(\d+)/i);
@@ -400,7 +397,7 @@ const LotInfoModal = ({
       unitText = direccion.replace(/Lote/gi, 'Lt.');
     }
   
-    return stageText ? `${stageText} - ${unitText}` : unitText;
+    return unitText;
   };
 
   // Función para obtener solo la parte del lote sin la etapa (para mostrar en el modal)
@@ -451,7 +448,7 @@ const LotInfoModal = ({
   const [focusedInputs, setFocusedInputs] = useState<{[key: string]: boolean}>({});
   // Datos por defecto si no hay datos del lote
   const defaultLotData = {
-    lot: formatLotLabel("Lote sin identificar", "1"),
+    lot: formatLotLabel("Lote sin identificar"),
     status: "Disponible",
     price: "$0.00",
     area: "0.00 m²",
@@ -469,7 +466,7 @@ const LotInfoModal = ({
 
   const lotData = loteData
     ? {
-        lot: formatLotLabel(loteData.direccion, loteData.phase || "1"),
+        lot: formatLotLabel(loteData.direccion),
         status: loteData.estado || "Disponible",
         price: loteData.precio
           ? (() => {
