@@ -1,186 +1,240 @@
-# 🏘️ Proyecto Inmobiliario 3D - Mikonos Residencial Playa
+# Proyecto Inmobiliario 3D - Nautia Condominios
 
-Una aplicación web interactiva desarrollada con React, TypeScript y Cesium para la visualización 3D de un proyecto inmobiliario. Permite explorar lotes, áreas comunes, entorno y servicios de manera inmersiva con un sistema completo de cotización y gestión de usuarios.
+Aplicacion web interactiva para visualizar y explorar un proyecto inmobiliario en un entorno 3D. El usuario puede recorrer el mapa, consultar lotes, revisar areas comunes, explorar puntos cercanos del entorno, abrir fotos 360, reproducir un video del proyecto y generar cotizaciones desde la informacion visible de cada lote.
 
-## 🚀 Características Principales
+El visor esta orientado a la presentacion comercial de proyectos inmobiliarios, combinando navegacion 3D, datos geoespaciales y herramientas de consulta para que el visitante pueda entender la ubicacion, disponibilidad y caracteristicas del desarrollo. La experiencia permite pasar de una vista general del condominio a informacion especifica de cada lote, filtrando por precio, area o estado, y abriendo modales con datos comerciales claros como area, precio, etapa, colindancias y disponibilidad.
 
-### 🗺️ Visualización 3D
-- **Motor 3D**: Cesium.js para renderizado 3D de alta calidad
-- **Navegación**: Controles intuitivos para explorar el terreno
-- **Vista 2D/3D**: Alternancia entre vistas planas y tridimensionales
-- **Grid**: Visualización de cuadrícula para mediciones precisas
+Uno de los modulos principales es el cotizador, que permite simular una propuesta comercial directamente desde un lote disponible. En esta seccion se muestran el precio de lista, los descuentos aplicados y el precio final; ademas, el usuario puede configurar descuentos por porcentaje o monto, elegir la forma de pago, definir separacion, cuota inicial, numero de cuotas y fecha del primer pago. Con esos datos, la app genera un cronograma de pagos con fechas, porcentajes y montos, y ofrece acciones para imprimir, guardar o generar la cotizacion en PDF.
 
-### 🏠 Gestión de Lotes
-- **Catálogo de Lotes**: Visualización de todos los lotes disponibles
-- **Estados**: Disponible, Reservado, Vendido con colores distintivos
-- **Búsqueda y Filtros**: Por precio, área, estado y ordenamiento
-- **Sistema de Cotización**: Generación automática de cronogramas de pago
+La aplicacion tambien complementa la venta con contenido visual y de ubicacion: incluye areas comunes con imagenes y enfoque en el mapa, recorridos 360, video del proyecto y una seccion de entorno donde se pueden filtrar puntos cercanos como playas, restaurantes, hoteles, zonas turisticas o servicios de seguridad. Desde cada punto del entorno se puede calcular una ruta estimada hacia el proyecto o abrir la ubicacion en Google Maps.
 
-### 🏢 Áreas Comunes
-- **Club House**: Instalaciones recreativas
-- **Parque**: Espacios verdes comunitarios
-- **Pórtico de Ingreso**: Acceso principal al proyecto
+## Funcionalidades visibles
 
-### 🌍 Entorno y Servicios
-- **Categorías**: Restaurantes, Hoteles, Seguridad, Turismo, Playas
-- **Información Detallada**: Descripción y ubicación de cada servicio
-- **Rutas**: Cálculo de distancias y rutas de acceso
+### Visor 3D del proyecto
 
-### 📸 Experiencia Multimedia
-- **Fotos 360°**: Tours virtuales inmersivos con Kuula
-- **Videos**: Contenido audiovisual del proyecto
-- **Galería de Imágenes**: Visualización de áreas y servicios
+- Mapa 3D interactivo del condominio usando Cesium.
+- Navegacion libre por el terreno con rotacion, desplazamiento y zoom.
+- Pantalla inicial de carga del entorno 3D.
+- Panel de instrucciones para explicar los controles en desktop y movil.
+- Boton de vista inicial para volver rapidamente al encuadre principal.
+- Controles de camara para subir, bajar, acercar, alejar y activar vista 3D.
+- Alternancia de cuadricula para mostrar u ocultar la capa visual de lotes.
+- Resaltado visual de lotes al interactuar con el mapa.
+- Adaptacion responsive para escritorio, tablet y movil.
 
-### 👥 Sistema de Usuarios
-- **Autenticación**: Sistema de login con validación
-- **Perfiles de Usuario**: Gestión de información personal
-- **Vendedores**: Base de datos de vendedores con IDs únicos
-- **Persistencia**: Almacenamiento local de sesiones
+### Consulta de lotes
 
-### 💰 Sistema de Cotización Avanzado
-- **Modalidades de Pago**: Crédito Hipotecario, Contado, Crédito Directo
-- **Descuentos**: Aplicación de descuentos por monto o porcentaje
-- **Cronogramas Inteligentes**: Generación automática con fechas editables
-- **Validaciones**: Verificación de fechas y montos
-- **Exportación**: Generación de PDFs e impresión
+- Visualizacion de lotes sobre el mapa con colores por estado.
+- Leyenda interactiva con conteo total de lotes.
+- Filtros visuales por estado: disponible, reservado, vendido y negociacion.
+- Seleccion de lotes directamente desde el visor.
+- Modal de informacion del lote seleccionado.
+- Datos visibles del lote: identificador, estado, precio, area, etapa y colindancias.
+- Boton para contactar cuando el lote esta disponible.
+- Boton de cotizacion para lotes disponibles.
+- Soporte para abrir un lote destacado desde URL mediante parametro de resaltado.
 
-## 🛠️ Tecnologías Utilizadas
+### Busqueda y filtros de lotes
+
+- Panel de busqueda de lotes.
+- Filtro por rango de precio.
+- Filtro por rango de area.
+- Filtro por estado del lote.
+- Ordenamiento por area, precio y numero de lote.
+- Boton para limpiar filtros.
+- Listado de resultados con tarjetas de lotes.
+- Sincronizacion entre el listado de resultados y la seleccion en el mapa.
+
+### Cotizador
+
+- Cotizacion desde el modal de un lote disponible.
+- Resumen de precio de lista, descuento y precio final.
+- Aplicacion de descuentos por porcentaje o monto.
+- Presets visibles de descuento.
+- Seleccion de forma de pago: credito directo o contado.
+- Configuracion de separacion, cuota inicial, numero de cuotas y fecha de primer pago.
+- Calculo de cuota estimada.
+- Generacion de cronograma de pagos.
+- Tabla de cuotas con item, fecha, porcentaje y monto.
+- Acciones visibles para imprimir y guardar la cotizacion.
+- Generacion de documentos PDF mediante jsPDF.
+
+### Areas comunes
+
+- Seccion de areas comunes desde el menu principal.
+- Visualizacion de areas del proyecto como portico, parque y club.
+- Tarjetas con imagen y nombre del area.
+- Boton para ver imagenes del area comun.
+- Boton para ubicar el area comun dentro del mapa.
+- Modal minimizable en vista movil.
+
+### Entorno y ubicacion
+
+- Seccion de entorno desde el menu principal.
+- Marcadores de puntos cercanos al proyecto.
+- Filtros por categoria: todos, playas, restaurantes, hoteles, turismo y seguridad.
+- Modal de informacion para cada punto del entorno.
+- Imagen, tipo, nombre y coordenadas del punto seleccionado.
+- Accion "Como llegar" con estimacion de tiempo y distancia.
+- Boton para abrir la ubicacion en Google Maps.
+- Modal minimizable y boton de reapertura en dispositivos moviles.
+
+### Fotos 360 y video
+
+- Seccion de fotos 360 para recorridos inmersivos.
+- Overlay con iframe para visualizar recorridos 360.
+- Seccion de video del proyecto.
+- Reproductor de video en modal con controles nativos.
+- Cierre del contenido multimedia al cambiar de seccion o cerrar overlay.
+
+## Tecnologias utilizadas
 
 ### Frontend
-- **React 19.1.1**: Framework principal con hooks modernos
-- **TypeScript**: Tipado estático para mejor mantenimiento
-- **Vite 7.1.7**: Herramienta de construcción rápida
-- **CSS Tradicional**: Estilos globales por componente
 
-### 3D y Visualización
-- **Cesium.js**: Motor 3D para visualización geográfica
-- **GeoJSON**: Datos geoespaciales estructurados
-- **OpenRouteService API**: Cálculo de rutas y distancias
+- React 19
+- TypeScript
+- Vite
+- CSS por componentes
+- Tailwind CSS 4 como dependencia de estilos
+- Material Symbols para iconografia
 
-### Herramientas de Desarrollo
-- **ESLint**: Linting de código con reglas estrictas
-- **date-fns 4.1.0**: Manipulación avanzada de fechas
-- **jsPDF 3.0.3**: Generación de documentos PDF
+### Visualizacion 3D y datos
 
-## 📁 Estructura del Proyecto
+- CesiumJS 1.134
+- Cesium Ion
+- GeoJSON para lotes, areas comunes, fotos 360 y puntos del entorno
+- Modelos GLB para elementos 3D
+- OpenRouteService para calculo de rutas y distancias
 
-```
-src/
-├── components/           # Componentes React
-│   ├── BottomBar/       # Barra de controles inferiores
-│   ├── Modals/          # Ventanas modales
-│   │   ├── AreasModal/     # Modal de áreas comunes
-│   │   ├── ContactModal/    # Modal de contacto y datos
-│   │   ├── EntornoModal/   # Modal de entorno
-│   │   ├── LoginModal/     # Modal de autenticación
-│   │   ├── LotInfoModal/   # Modal principal de lotes
-│   │   ├── LotSearchModal/ # Modal de búsqueda de lotes
-│   │   └── UserInfoModal/  # Modal de información de usuario
-│   ├── Overlays/        # Superposiciones multimedia
-│   ├── Sidebar/         # Barra lateral de navegación
-│   └── UI/              # Componentes de interfaz
-├── Layout/              # Componentes de layout
-├── cesium/              # Configuración de Cesium
-└── App.tsx              # Componente principal
+### Utilidades
 
-public/
-├── data/               # Datos geoespaciales y configuración
-│   ├── areas.geojson      # Áreas comunes del proyecto
-│   ├── entorno.geojson    # Servicios del entorno
-│   ├── fotos.geojson      # Ubicaciones de fotos 360°
-│   ├── lotes.geojson      # Información de lotes
-│   └── sellers.json       # Base de datos de vendedores
-└── images/             # Recursos multimedia
-```
+- date-fns para manejo de fechas del cotizador
+- jsPDF para generacion de documentos PDF
+- WebSocket opcional para actualizaciones de lotes en tiempo real
+- ESLint para revision de codigo
 
-## 🚀 Instalación y Configuración
+## Requisitos
 
-### Prerrequisitos
-- Node.js (versión 18 o superior)
-- npm o yarn
+- Node.js 18 o superior
+- npm
+- Navegador moderno con soporte WebGL
 - Token de Cesium Ion
-- API Key de OpenRouteService
+- API key de OpenRouteService si se usara la funcion "Como llegar"
+- URL de API del proyecto si se usaran datos dinamicos de lotes/cotizaciones
+- URL de WebSocket opcional si se desean actualizaciones en tiempo real
 
-### Instalación
+## Ejecutar despues de clonar
 
-1. **Clonar el repositorio**
+1. Clonar el repositorio:
+
 ```bash
-git clone <url-del-repositorio>
-cd mi-proyecto
+git clone <URL_DEL_REPOSITORIO>
+cd com_mapvisor_app
 ```
 
-2. **Instalar dependencias**
+2. Instalar dependencias:
+
 ```bash
 npm install
 ```
 
-3. **Configurar variables de entorno**
-Crear un archivo `.env` en la raíz del proyecto:
+3. Crear un archivo `.env` en la raiz del proyecto:
+
 ```env
 VITE_CESIUM_TOKEN=tu_token_de_cesium_ion
-VITE_OPEN_ROUTE_SERVICE_KEY=tu_api_key_de_openroute
+VITE_OPEN_ROUTE_SERVICE_KEY=tu_api_key_de_openrouteservice
+VITE_API_BASE_URL=https://tu-api.com
+VITE_PROJECT_ID=id_del_proyecto
+VITE_SOCKET_BASE_URL=wss://tu-websocket.com
+VITE_GOOGLE_APPS_SCRIPT_URL=https://script.google.com/...
 ```
 
-4. **Ejecutar en modo desarrollo**
+Variables importantes:
+
+- `VITE_CESIUM_TOKEN`: necesaria para cargar Cesium Ion.
+- `VITE_OPEN_ROUTE_SERVICE_KEY`: necesaria para calcular rutas desde el entorno.
+- `VITE_API_BASE_URL`: usada para obtener configuracion y datos dinamicos del proyecto.
+- `VITE_PROJECT_ID`: identifica el proyecto inmobiliario en la API.
+- `VITE_SOCKET_BASE_URL`: opcional, permite recibir cambios de lotes en tiempo real.
+- `VITE_GOOGLE_APPS_SCRIPT_URL`: opcional, permite alimentar datos externos de lotes.
+
+4. Ejecutar en modo desarrollo:
+
 ```bash
 npm run dev
 ```
 
-5. **Construir para producción**
+5. Abrir la URL local que entrega Vite, normalmente:
+
+```text
+http://localhost:5173
+```
+
+6. Construir para produccion:
+
 ```bash
 npm run build
 ```
 
-## 📊 Datos Geoespaciales
+7. Previsualizar la build:
 
-El proyecto utiliza archivos GeoJSON para almacenar información geoespacial:
+```bash
+npm run preview
+```
 
-- **`lotes.geojson`**: Información de lotes (precio, área, estado, coordenadas)
-- **`areas.geojson`**: Áreas comunes del proyecto
-- **`entorno.geojson`**: Servicios y puntos de interés del entorno
-- **`fotos.geojson`**: Ubicaciones de fotos 360°
-- **`sellers.json`**: Base de datos de vendedores con IDs únicos
+## Scripts disponibles
 
-## 🎮 Funcionalidades de Navegación
+```bash
+npm run dev        # Servidor local de desarrollo
+npm run build      # Compilacion TypeScript + build de Vite
+npm run build:prod # Build usando modo production
+npm run preview    # Previsualizacion de la build
+npm run lint       # Revision con ESLint
+```
 
-### Controles de Cámara
-- **Home**: Vuelta a la vista inicial
-- **Zoom In/Out**: Acercar y alejar
-- **Up/Down**: Movimiento vertical de cámara
-- **3D View**: Alternancia entre vista 2D y 3D
-- **Grid**: Mostrar/ocultar cuadrícula de medición
+## Datos y recursos principales
 
-### Interacción con Lotes
-- **Selección**: Click en lotes para ver información
-- **Hover**: Resaltado al pasar el mouse
-- **Filtros**: Búsqueda por criterios específicos
-- **Cotización**: Generación de cronogramas de pago
+- `public/data/lotesv2.geojson`: informacion geoespacial de lotes.
+- `public/data/areas.geojson`: areas comunes del proyecto.
+- `public/data/entorno.geojson`: puntos cercanos y servicios del entorno.
+- `public/data/fotos.geojson`: puntos asociados a recorridos 360.
+- `public/data/sellers.json`: datos de vendedores usados por el flujo comercial.
+- `public/images/`: imagenes, iconos, marcadores y video del proyecto.
+- `public/glbData/`: modelos 3D usados en la escena.
 
-## 💰 Sistema de Cotización Avanzado
+## Estructura del proyecto
 
-### Modalidades de Pago
-- **Crédito Hipotecario**: Financiamiento tradicional con separación, inicial y cuotas
-- **Contado**: Pago único con opciones de separación e inicial
-- **Crédito Directo**: Financiamiento directo con cuotas personalizables
+```text
+src/
+├── App.tsx
+├── main.tsx
+├── cesium/
+│   └── cesium-init.js
+├── components/
+│   ├── BottomBar/
+│   ├── Modals/
+│   │   ├── AreasModal/
+│   │   ├── ContactModal/
+│   │   ├── EntornoModal/
+│   │   ├── LotInfoModal/
+│   │   └── LotSearchModal/
+│   ├── Overlays/
+│   │   ├── EntornoButtons/
+│   │   ├── ImageOverlay/
+│   │   ├── Photos360Overlay/
+│   │   └── VideoOverlay/
+│   ├── Sidebar/
+│   └── UI/
+├── constants/
+├── contexts/
+├── hooks/
+├── Layout/
+└── types/
+```
 
-### Características Avanzadas
-- **Descuentos Inteligentes**: Aplicación automática por monto o porcentaje
-- **Cronogramas Editables**: Fechas personalizables con validación
-- **Cuotas Equivalentes**: Distribución automática de pagos
-- **Sincronización**: Datos de vendedor y cliente integrados
-- **Validaciones**: Verificación de fechas (no anteriores a hoy)
-- **Exportación**: Generación de PDFs e impresión con datos completos
+## Notas de configuracion
 
-## 🎨 Interfaz de Usuario
-
-### Diseño Responsivo
-- **Desktop**: Experiencia completa con controles avanzados
-- **Tablet**: Interfaz adaptada con controles optimizados
-- **Móvil**: Controles táctiles optimizados para navegación
-
-### Componentes Principales
-- **Sidebar**: Navegación principal con categorías
-- **BottomBar**: Controles de cámara y vista
-- **Modales**: Ventanas de información especializadas
-- **Overlays**: Superposiciones multimedia
-
+- La escena principal se inicializa en `src/cesium/cesium-init.js`.
+- Los controles visibles de React se comunican con Cesium mediante funciones y eventos globales.
+- Si las variables de API no estan configuradas, la app puede seguir cargando recursos locales, pero algunas funciones dinamicas como rangos reales, rutas o actualizaciones externas pueden quedar limitadas.
+- Para desplegar el proyecto, primero ejecuta `npm run build` y publica la carpeta `dist/` en el hosting elegido.
